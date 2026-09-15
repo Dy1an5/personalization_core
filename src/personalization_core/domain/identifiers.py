@@ -36,6 +36,10 @@ class SubjectId(RootModel[BiggerStr]):
 
 
 class SubjectRef(DomainModel):
+    """
+    (tenant_id, namespace, subject_id) 唯一
+    """
+
     tenant_id: TenantId
     namespace: Namespace
     subject_id: SubjectId

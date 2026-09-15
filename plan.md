@@ -907,16 +907,16 @@ class SemanticEnricher(Protocol):
 
 ### 阶段 2：定义 Subject、Entity、Event、Evidence
 
-- [ ] 2.1 实现 `Subject` 和输入模型。
-- [ ] 2.2 实现 `Entity`、`EntityCreate`、`EntityPatch`。
-- [ ] 2.3 实现 `Event`、`EventCreate`。
-- [ ] 2.4 实现 `Evidence`、`EvidenceCreate`。
-- [ ] 2.5 实现 Event 内容规范化和内容摘要。
-- [ ] 2.6 定义幂等重放与幂等冲突判定函数。
-- [ ] 2.7 测试同内容同幂等键得到相同摘要。
-- [ ] 2.8 测试字段变化触发幂等冲突。
-- [ ] 2.9 测试 Event 创建后不可变。
-- [ ] 2.10 测试任意 JSON 属性可以稳定序列化。
+- [x] 2.1 实现 `Subject` 和输入模型。
+- [x] 2.2 实现 `Entity`、`EntityCreate`、`EntityPatch`。
+- [x] 2.3 实现 `Event`、`EventCreate`。
+- [x] 2.4 实现 `Evidence`、`EvidenceCreate`。
+- [x] 2.5 实现 Event 内容规范化和内容摘要。
+- [x] 2.6 定义幂等重放与幂等冲突判定函数。
+- [x] 2.7 测试同内容同幂等键得到相同摘要。
+- [x] 2.8 测试字段变化触发幂等冲突。
+- [x] 2.9 测试 Event 创建后不可变。
+- [x] 2.10 测试任意 JSON 属性可以稳定序列化。
 
 阶段验收：
 

@@ -9,6 +9,5 @@ class DomainModel(BaseModel):
 
 class FrozenDomainModel(DomainModel):
     model_config = ConfigDict(
-        extra="forbid",
         frozen=True,
     )
