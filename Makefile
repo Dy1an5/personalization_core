@@ -1,4 +1,9 @@
-.PHONY: check
+.PHONY: check fix
+
+fix: 
+	uv run ruff format .
+	uv run ruff check --fix .
+
 
 check:
 	uv run ruff format --check .

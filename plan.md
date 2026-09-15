@@ -888,22 +888,22 @@ class SemanticEnricher(Protocol):
 
 ### 阶段 1：定义领域基础类型
 
-- [ ] 1.1 实现 `JsonValue` 递归类型。
-- [ ] 1.2 实现 Tenant、Namespace、Subject 标识值对象。
-- [ ] 1.3 实现 `SubjectRef`。
-- [ ] 1.4 实现 `EntityRef`。
-- [ ] 1.5 实现 UTC 时间校验器。
-- [ ] 1.6 实现 `Polarity` 和通用状态枚举。
-- [ ] 1.7 实现领域错误基类和稳定 error code。
-- [ ] 1.8 为标识符空白、长度、大小写编写参数化测试。
-- [ ] 1.9 为 naive datetime 拒绝策略编写测试。
-- [ ] 1.10 为所有公共模型配置 `extra='forbid'`。
-- [ ] 1.11 导出首批公共类型并冻结命名。
+- [x] 1.1 实现 `JsonValue` 递归类型。
+- [x] 1.2 实现 Tenant、Namespace、Subject 标识值对象。
+- [x] 1.3 实现 `SubjectRef`。
+- [x] 1.4 实现 `EntityRef`。
+- [x] 1.5 实现 UTC 时间校验器。
+- [x] 1.6 实现 `Polarity` 和通用状态枚举。
+- [x] 1.7 实现领域错误基类和稳定 error code。
+- [x] 1.8 为标识符空白、长度、大小写编写参数化测试。
+- [x] 1.9 为 naive datetime 拒绝策略编写测试。
+- [x] 1.10 为所有公共模型配置 `extra='forbid'`。
+- [x] 1.11 导出首批公共类型并冻结命名。
 
 阶段验收：
 
-- [ ] 所有领域类型不依赖数据库和 Web 框架。
-- [ ] 非法时间和越界标识均产生稳定错误。
+- [x] 所有领域类型不依赖数据库和 Web 框架。
+- [x] 非法时间和越界标识均产生稳定错误。
 
 ### 阶段 2：定义 Subject、Entity、Event、Evidence
 
