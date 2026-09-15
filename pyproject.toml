@@ -1,0 +1,61 @@
+[project]
+name = "personalization-core"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "dylan", email = "5dylanwu@gmail.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.13.5",
+    "sqlalchemy>=2.0.53",
+]
+
+[project.scripts]
+personalization-core = "personalization_core:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "hypothesis>=6.168.0",
+    "pyright>=1.1.414",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.16.7",
+]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",
+    "UP",
+    "B",
+    "SIM"
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+[tool.pyright]
+typeCheckingMode = "strict"
+include = ["src", "tests"]
+pythonVersion = "3.11"
+
+[tool.pytest.ini_options]
+markers = [
+    "unit: fast isolated tests for a single unit of behavior",
+    "contract: tests that verify public interfaces and data contracts",
+    "integration: tests involving multiple internal components or real infrastructure",
+    "e2e: end-to-end tests covering a complete user-facing workflow",
+]
+addopts = ["--strict-markers"]
