@@ -10,6 +10,9 @@ class ErrorCode(StrEnum):
     SUBJECT_DELETED = "SUBJECT_DELETED"
     ENTITY_NOT_FOUND = "ENTITY_NOT_FOUND"
     MEMORY_NOT_FOUND = "MEMORY_NOT_FOUND"
+    MEMORY_ERROR = "MEMORY_ERROR"
+    MEMORY_PROTECTION_ERROR = "MEMORY_PROTECTION_ERROR"
+    MEMORY_TRANSITION_ERROR = "MEMORY_TRANSITION_ERROR"
     REVISION_CONFLICT = "REVISION_CONFLICT"
     IDEMPOTENCY_CONFLICT = "IDEMPOTENCY_CONFLICT"
     TENANT_SCOPE_VIOLATION = "TENANT_SCOPE_VIOLATION"
@@ -54,8 +57,34 @@ class MemoryNotFoundError(DomainError):
     code = ErrorCode.MEMORY_NOT_FOUND
 
 
+class MemoryError(DomainError):
+    code = ErrorCode.MEMORY_ERROR
+
+
+class MemoryTransitionError(DomainError):
+    code = ErrorCode.MEMORY_TRANSITION_ERROR
+
+
+class MemoryProtectionError(DomainError):
+    code = ErrorCode.MEMORY_PROTECTION_ERROR
+
+
 class RevisionConflictError(DomainError):
     code = ErrorCode.REVISION_CONFLICT
+
+    def __init__(
+        self,
+        *,
+        expected_revision: int,
+        actual_revision: int,
+    ) -> None:
+        self.expected_revision = expected_revision
+        self.actual_revision = actual_revision
+
+        super().__init__(
+            "memory revision conflict: "
+            f"expected={expected_revision}, actual={actual_revision}"
+        )
 
 
 class IdempotencyConflictError(DomainError):

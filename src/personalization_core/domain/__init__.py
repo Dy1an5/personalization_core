@@ -1,18 +1,29 @@
-"""阶段 1 冻结的领域层公共类型。
+"""领域层公共类型。
 
 本模块的 ``__all__`` 是公共命名契约：任何新增、删除或重命名都必须
 同步更新 ``test/unit/domain/test_public_api.py`` 中的冻结快照。
 """
 
 from .base import DomainModel, FrozenDomainModel
-from .enums import Polarity
+from .enums import (
+    MemoryAuthority,
+    MemoryConflictType,
+    MemoryKind,
+    MemoryScope,
+    MemoryState,
+    MemoryTransitionType,
+    Polarity,
+)
 from .errors import (
     DomainError,
     EntityNotFoundError,
     ErrorCode,
     IdempotencyConflictError,
     InvalidArgumentError,
+    MemoryError,
     MemoryNotFoundError,
+    MemoryProtectionError,
+    MemoryTransitionError,
     ProcessingFailedError,
     ProviderInvalidResponseError,
     ProviderNetworkError,
@@ -24,6 +35,23 @@ from .errors import (
     TenantScopeViolationError,
 )
 from .identifiers import EntityRef, Namespace, SubjectId, SubjectRef, TenantId
+from .memory import (
+    MemoryCandidate,
+    MemoryConflict,
+    MemoryRecord,
+    MemoryTransition,
+    MemoryTransitionResult,
+    PreferenceTarget,
+    confirm_memory,
+    create_explicit_memory,
+    create_inferred_memory,
+    expire_memory,
+    is_memory_effective,
+    is_within_validity_window,
+    restore_memory,
+    soft_delete_memory,
+    supersede_memory,
+)
 from .types import JsonValue, UtcDatetime
 
 __all__ = [
@@ -36,9 +64,24 @@ __all__ = [
     "IdempotencyConflictError",
     "InvalidArgumentError",
     "JsonValue",
+    "MemoryAuthority",
+    "MemoryCandidate",
+    "MemoryConflict",
+    "MemoryConflictType",
+    "MemoryError",
+    "MemoryKind",
     "MemoryNotFoundError",
+    "MemoryProtectionError",
+    "MemoryRecord",
+    "MemoryScope",
+    "MemoryState",
+    "MemoryTransition",
+    "MemoryTransitionError",
+    "MemoryTransitionResult",
+    "MemoryTransitionType",
     "Namespace",
     "Polarity",
+    "PreferenceTarget",
     "ProcessingFailedError",
     "ProviderInvalidResponseError",
     "ProviderNetworkError",
@@ -52,4 +95,13 @@ __all__ = [
     "TenantId",
     "TenantScopeViolationError",
     "UtcDatetime",
+    "confirm_memory",
+    "create_explicit_memory",
+    "create_inferred_memory",
+    "expire_memory",
+    "is_memory_effective",
+    "is_within_validity_window",
+    "restore_memory",
+    "soft_delete_memory",
+    "supersede_memory",
 ]

@@ -11,3 +11,7 @@ class FrozenDomainModel(DomainModel):
     model_config = ConfigDict(
         frozen=True,
     )
+
+
+class StrictFrozenDomainModel(FrozenDomainModel):
+    model_config = ConfigDict(strict=True)

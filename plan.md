@@ -925,19 +925,19 @@ class SemanticEnricher(Protocol):
 
 ### 阶段 3：定义 Memory 领域模型和状态机
 
-- [ ] 3.1 实现 Memory 枚举和模型。
-- [ ] 3.2 实现 `MemoryCandidate`。
-- [ ] 3.3 实现显式 Memory 默认激活规则。
-- [ ] 3.4 实现推断 Memory 默认候选规则。
-- [ ] 3.5 实现 confirm 状态转换。
-- [ ] 3.6 实现 supersede 状态转换。
-- [ ] 3.7 实现 expire 状态转换。
-- [ ] 3.8 实现 soft delete 和 restore 状态转换。
-- [ ] 3.9 实现 `revision` 乐观锁规则。
-- [ ] 3.10 实现有效时间判断。
-- [ ] 3.11 实现 Memory 冲突数据模型，不实现自动语义判断。
-- [ ] 3.12 为每条合法和非法状态转换编写测试。
-- [ ] 3.13 测试行为推断不能覆盖 explicit Memory。
+- [x] 3.1 实现 Memory 枚举和模型。
+- [x] 3.2 实现 `MemoryCandidate`。
+- [x] 3.3 实现显式 Memory 默认激活规则。
+- [x] 3.4 实现推断 Memory 默认候选规则。
+- [x] 3.5 实现 confirm 状态转换。
+- [x] 3.6 实现 supersede 状态转换。
+- [x] 3.7 实现 expire 状态转换。
+- [x] 3.8 实现 soft delete 和 restore 状态转换。
+- [x] 3.9 实现 `revision` 乐观锁规则。
+- [x] 3.10 实现有效时间判断。
+- [x] 3.11 实现 Memory 冲突数据模型，不实现自动语义判断。
+- [x] 3.12 为每条合法和非法状态转换编写测试。
+- [x] 3.13 测试行为推断不能覆盖 explicit Memory。
 
 阶段验收：
 
