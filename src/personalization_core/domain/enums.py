@@ -63,3 +63,19 @@ class MemoryConflictType(StrEnum):
     SLOT = "slot"
     SEMANTIC = "semantic"
     TEMPORAL = "temporal"
+
+
+class ResolutionType(StrEnum):
+    EXPLICIT_ONLY = "explicit_only"
+    BEHAVIOR_ONLY = "behavior_only"
+    ALIGNED = "aligned"
+    EXPLICIT_OVERRIDES_BEHAVIOR = "explicit_overrides_behavior"
+    UNRESOLVED_CONFLICT = "unresolved_conflict"
+
+
+class ProfileStatus(StrEnum):
+    COMPLETE = "complete"
+    PARTIAL = "partial"
+    STALE = "stale"
+    EMPTY = "empty"
+    FAILED = "failed"
