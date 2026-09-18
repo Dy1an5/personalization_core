@@ -435,6 +435,14 @@ class SQLAlchemyEventRepository(EventRepository):
         stmt = select(EventRow).where(EventRow.subject_pk == pk)
         if filters.event_type is not None:
             stmt = stmt.where(EventRow.event_type == filters.event_type)
+        if filters.source is not None:
+            stmt = stmt.where(EventRow.source == filters.source)
+        if filters.polarity is not None:
+            stmt = stmt.where(EventRow.polarity == filters.polarity.value)
+        if filters.occurred_from is not None:
+            stmt = stmt.where(EventRow.occurred_at >= filters.occurred_from)
+        if filters.occurred_until is not None:
+            stmt = stmt.where(EventRow.occurred_at <= filters.occurred_until)
         rows = (
             await self.session.scalars(
                 stmt.order_by(EventRow.occurred_at.desc(), EventRow.id.desc())

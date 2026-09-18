@@ -1,5 +1,7 @@
+import hashlib
+import json
 from datetime import datetime
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from pydantic import Field
 
@@ -43,3 +45,57 @@ class Entity:
     first_seen_at: datetime
     last_seen_at: datetime
     deleted_at: datetime | None
+
+
+def entity_content_digest(input: EntityCreate) -> str:
+    payload = {
+        "attributes": input.attributes,
+        "content_text": input.content_text,
+        "schema_version": input.schema_version,
+    }
+    canonical = json.dumps(
+        payload,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
+
+
+def build_entity(
+    subject: SubjectRef,
+    input: EntityCreate,
+    now: datetime,
+    *,
+    entity_id: UUID | None = None,
+) -> Entity:
+    entity = Entity()
+    entity.id = entity_id or uuid4()
+    entity.subject = subject
+    entity.entity_type = input.entity_type
+    entity.external_id = input.external_id
+    entity.attributes = dict(input.attributes)
+    entity.content_text = input.content_text
+    entity.content_hash = entity_content_digest(input)
+    entity.schema_version = input.schema_version
+    entity.first_seen_at = now
+    entity.last_seen_at = now
+    entity.deleted_at = None
+    return entity
+
+
+def merge_entity(existing: Entity, input: EntityCreate, now: datetime) -> Entity:
+    entity = Entity()
+    entity.id = existing.id
+    entity.subject = existing.subject
+    entity.entity_type = existing.entity_type
+    entity.external_id = existing.external_id
+    entity.attributes = dict(input.attributes)
+    entity.content_text = input.content_text
+    entity.content_hash = entity_content_digest(input)
+    entity.schema_version = input.schema_version
+    entity.first_seen_at = existing.first_seen_at
+    entity.last_seen_at = now
+    entity.deleted_at = existing.deleted_at
+    return entity

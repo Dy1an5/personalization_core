@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Protocol, runtime_checkable
 from uuid import UUID
 
 from personalization_core.domain.entities import Entity
-from personalization_core.domain.enums import MemoryState
+from personalization_core.domain.enums import MemoryState, Polarity
 from personalization_core.domain.events import Event
 from personalization_core.domain.evidence import Evidence
 from personalization_core.domain.features import FeatureObservation, FeatureState
@@ -34,6 +35,23 @@ class Page:
 @dataclass(frozen=True, slots=True)
 class EventFilter:
     event_type: str | None = None
+    source: str | None = None
+    polarity: Polarity | None = None
+    occurred_from: datetime | None = None
+    occurred_until: datetime | None = None
+
+    def __post_init__(self) -> None:
+        for value in (self.occurred_from, self.occurred_until):
+            if value is not None and (
+                value.tzinfo is None or value.utcoffset() is None
+            ):
+                raise ValueError("event filter datetimes must be timezone-aware")
+        if (
+            self.occurred_from is not None
+            and self.occurred_until is not None
+            and self.occurred_from > self.occurred_until
+        ):
+            raise ValueError("occurred_from must not be after occurred_until")
 
 
 @dataclass(frozen=True, slots=True)
