@@ -946,19 +946,19 @@ class SemanticEnricher(Protocol):
 
 ### 阶段 4：定义 Feature 与 Profile 领域模型
 
-- [ ] 4.1 实现 `FeatureObservation` 和 Draft。
-- [ ] 4.2 实现 `FeatureState` 和 Draft。
-- [ ] 4.3 实现正负证据计数约束。
-- [ ] 4.4 实现长短期分数范围约束。
-- [ ] 4.5 实现 `ResolvedPreference`。
-- [ ] 4.6 实现 `PreferenceConflict`。
-- [ ] 4.7 实现确定性的权威级别比较器。
-- [ ] 4.8 实现 `ProfileCoverage`。
-- [ ] 4.9 实现 `ProfileSnapshot`。
-- [ ] 4.10 实现 `ProfileDiff`。
-- [ ] 4.11 测试 complete 与 confidence 相互独立。
-- [ ] 4.12 测试显式与行为一致时生成 `aligned`。
-- [ ] 4.13 测试显式与行为冲突时生成 `explicit_overrides_behavior`。
+- [x] 4.1 实现 `FeatureObservation` 和 Draft。
+- [x] 4.2 实现 `FeatureState` 和 Draft。
+- [x] 4.3 实现正负证据计数约束。
+- [x] 4.4 实现长短期分数范围约束。
+- [x] 4.5 实现 `ResolvedPreference`。
+- [x] 4.6 实现 `PreferenceConflict`。
+- [x] 4.7 实现确定性的权威级别比较器。
+- [x] 4.8 实现 `ProfileCoverage`。
+- [x] 4.9 实现 `ProfileSnapshot`。
+- [x] 4.10 实现 `ProfileDiff`。
+- [x] 4.11 测试 complete 与 confidence 相互独立。
+- [x] 4.12 测试显式与行为一致时生成 `aligned`。
+- [x] 4.13 测试显式与行为冲突时生成 `explicit_overrides_behavior`。
 
 阶段验收：
 
@@ -967,20 +967,20 @@ class SemanticEnricher(Protocol):
 
 ### 阶段 5：定义端口和内存测试实现
 
-- [ ] 5.1 定义 Clock 端口和 FakeClock。
-- [ ] 5.2 定义 UnitOfWork 端口。
-- [ ] 5.3 定义 Subject Repository。
-- [ ] 5.4 定义 Entity Repository。
-- [ ] 5.5 定义 Event Repository。
-- [ ] 5.6 定义 Evidence Repository。
-- [ ] 5.7 定义 Memory Repository。
-- [ ] 5.8 定义 Feature Repository。
-- [ ] 5.9 定义 Profile Repository。
-- [ ] 5.10 定义 Processing Run Repository。
-- [ ] 5.11 定义 Provider 和 Retrieval 端口。
-- [ ] 5.12 编写 Repository 共享契约测试套件。
-- [ ] 5.13 实现仅供测试使用的 In-memory Repository。
-- [ ] 5.14 让 In-memory 实现通过全部 Repository 契约。
+- [x] 5.1 定义 Clock 端口和 FakeClock。
+- [x] 5.2 定义 UnitOfWork 端口。
+- [x] 5.3 定义 Subject Repository。
+- [x] 5.4 定义 Entity Repository。
+- [x] 5.5 定义 Event Repository。
+- [x] 5.6 定义 Evidence Repository。
+- [x] 5.7 定义 Memory Repository。
+- [x] 5.8 定义 Feature Repository。
+- [x] 5.9 定义 Profile Repository。
+- [x] 5.10 定义 Processing Run Repository。
+- [x] 5.11 定义 Provider 和 Retrieval 端口。
+- [x] 5.12 编写 Repository 共享契约测试套件。
+- [x] 5.13 实现仅供测试使用的 In-memory Repository。
+- [x] 5.14 让 In-memory 实现通过全部 Repository 契约。
 
 阶段验收：
 

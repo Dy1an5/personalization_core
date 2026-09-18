@@ -50,6 +50,8 @@ line-ending = "auto"
 typeCheckingMode = "strict"
 include = ["src", "tests"]
 pythonVersion = "3.11"
+venvPath = "."
+venv = ".venv"
 
 [tool.pytest.ini_options]
 markers = [
