@@ -13,11 +13,11 @@ wheels/
 .pytest_cache/
 .ruff_cache/
 
+# Keep legacy tests ignored while exposing the phase 6 integration suite.
+tests/
+
 # myself
 command.md
-
-# tests
-tests/
 
 # agents
 .agents/

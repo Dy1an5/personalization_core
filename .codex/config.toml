@@ -1,0 +1,7 @@
+# 主 Agent：负责分析和规划
+model = "gpt-5.6-sol"
+model_reasoning_effort = "high"
+
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 3

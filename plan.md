@@ -989,26 +989,26 @@ class SemanticEnricher(Protocol):
 
 ### 阶段 6：实现数据库和迁移
 
-- [ ] 6.1 创建 SQLAlchemy Base 和命名约定。
-- [ ] 6.2 实现 13 张表的 ORM 映射。
-- [ ] 6.3 添加外键和删除策略。
-- [ ] 6.4 添加唯一约束和部分索引。
-- [ ] 6.5 创建 Alembic 初始迁移。
-- [ ] 6.6 实现 SQLite Engine 配置。
-- [ ] 6.7 启用 SQLite foreign keys 和 WAL。
-- [ ] 6.8 实现 SQLAlchemy Unit of Work。
-- [ ] 6.9 逐个实现 Repository。
-- [ ] 6.10 让 SQLite Adapter 通过共享 Repository 契约。
-- [ ] 6.11 添加事务回滚测试。
-- [ ] 6.12 添加并发 revision conflict 测试。
-- [ ] 6.13 添加幂等唯一约束竞争测试。
-- [ ] 6.14 添加迁移 upgrade/downgrade 冒烟测试。
+- [x] 6.1 创建 SQLAlchemy Base 和命名约定。
+- [x] 6.2 实现 13 张表的 ORM 映射。
+- [x] 6.3 添加外键和删除策略。
+- [x] 6.4 添加唯一约束和部分索引。
+- [x] 6.5 创建 Alembic 初始迁移。
+- [x] 6.6 实现 SQLite Engine 配置。
+- [x] 6.7 启用 SQLite foreign keys 和 WAL。
+- [x] 6.8 实现 SQLAlchemy Unit of Work。
+- [x] 6.9 逐个实现 Repository。
+- [x] 6.10 让 SQLite Adapter 通过共享 Repository 契约。
+- [x] 6.11 添加事务回滚测试。
+- [x] 6.12 添加并发 revision conflict 测试。
+- [x] 6.13 添加幂等唯一约束竞争测试。
+- [x] 6.14 添加迁移 upgrade/downgrade 冒烟测试。
 
 阶段验收：
 
-- [ ] 新数据库可以从零迁移到 head。
-- [ ] SQLite 下所有 Repository 契约通过。
-- [ ] 失败事务不会留下部分写入。
+- [x] 新数据库可以从零迁移到 head。
+- [x] SQLite 下所有 Repository 契约通过。
+- [x] 失败事务不会留下部分写入。
 
 ### 阶段 7：实现 Event 与 Evidence 写入链路
 
