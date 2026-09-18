@@ -6,8 +6,10 @@ from .dto import (
     EventIngestionResult,
     EventIngestionStatus,
     EventPage,
+    FeatureProcessingResult,
 )
 from .event_service import EventService
+from .feature_service import FeatureService
 from .subject_service import SubjectService
 
 __all__ = [
@@ -19,5 +21,7 @@ __all__ = [
     "EventIngestionStatus",
     "EventPage",
     "EventService",
+    "FeatureProcessingResult",
+    "FeatureService",
     "SubjectService",
 ]

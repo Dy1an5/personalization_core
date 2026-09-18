@@ -1054,26 +1054,26 @@ class SemanticEnricher(Protocol):
 
 ### 阶段 9：实现插件注册和 Feature Engine
 
-- [ ] 9.1 实现 FeatureExtractor Registry。
-- [ ] 9.2 拒绝同名同版本插件重复注册。
-- [ ] 9.3 按 Event Type 路由 Extractor。
-- [ ] 9.4 实现 Observation 幂等保存。
-- [ ] 9.5 实现单 Event Feature 处理。
-- [ ] 9.6 实现未处理 Event 扫描。
-- [ ] 9.7 实现 Processing Run 审计。
-- [ ] 9.8 实现内置 frequency Aggregator。
-- [ ] 9.9 实现内置 recency decay Aggregator。
-- [ ] 9.10 分别计算 short-term 与 long-term score。
-- [ ] 9.11 实现正负证据抵消但不互相删除。
-- [ ] 9.12 实现样本量和一致性置信度。
-- [ ] 9.13 实现 dimension 全量重建。
-- [ ] 9.14 测试 Extractor 升级后生成新 Observation。
-- [ ] 9.15 测试同版本重复处理不增加 Observation。
+- [x] 9.1 实现 FeatureExtractor Registry。
+- [x] 9.2 拒绝同名同版本插件重复注册。
+- [x] 9.3 按 Event Type 路由 Extractor。
+- [x] 9.4 实现 Observation 幂等保存。
+- [x] 9.5 实现单 Event Feature 处理。
+- [x] 9.6 实现未处理 Event 扫描。
+- [x] 9.7 实现 Processing Run 审计。
+- [x] 9.8 实现内置 frequency Aggregator。
+- [x] 9.9 实现内置 recency decay Aggregator。
+- [x] 9.10 分别计算 short-term 与 long-term score。
+- [x] 9.11 实现正负证据抵消但不互相删除。
+- [x] 9.12 实现样本量和一致性置信度。
+- [x] 9.13 实现 dimension 全量重建。
+- [x] 9.14 测试 Extractor 升级后生成新 Observation。
+- [x] 9.15 测试同版本重复处理不增加 Observation。
 
 阶段验收：
 
-- [ ] 使用测试插件可以从通用 Event 生成并聚合 Feature State。
-- [ ] 所有 Feature State 都能追溯到 Observation 和 Evidence。
+- [x] 使用测试插件可以从通用 Event 生成并聚合 Feature State。
+- [x] 所有 Feature State 都能追溯到 Observation 和 Evidence。
 
 ### 阶段 10：实现 Profile Resolver
 

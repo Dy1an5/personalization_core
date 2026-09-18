@@ -15,6 +15,7 @@ from personalization_core.domain.enums import (
 from personalization_core.domain.errors import ErrorCode
 from personalization_core.domain.events import Event, EventCreate
 from personalization_core.domain.evidence import Evidence, EvidenceCreate
+from personalization_core.domain.jobs import ProcessingRun
 from personalization_core.domain.memory import MemoryRecord, PreferenceTarget
 from personalization_core.domain.types import JsonValue, NonEmptyString, UtcDatetime
 
@@ -124,3 +125,11 @@ class MemoryExtractionResult(StrictFrozenDomainModel):
     extractor_name: NonEmptyString
     extractor_version: NonEmptyString
     items: list[MemoryExtractionItem]
+
+
+class FeatureProcessingResult(StrictFrozenDomainModel):
+    event_id: UUID
+    created_observation_count: int = Field(ge=0, strict=True)
+    replayed_observation_count: int = Field(ge=0, strict=True)
+    updated_state_count: int = Field(ge=0, strict=True)
+    run: ProcessingRun
