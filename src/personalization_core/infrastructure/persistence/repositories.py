@@ -15,6 +15,7 @@ from personalization_core.domain.enums import (
     MemoryKind,
     MemoryScope,
     MemoryState,
+    MemoryTransitionType,
     Polarity,
     ProfileStatus,
 )
@@ -28,7 +29,11 @@ from personalization_core.domain.evidence import Evidence
 from personalization_core.domain.features import FeatureObservation, FeatureState
 from personalization_core.domain.identifiers import EntityRef, SubjectRef
 from personalization_core.domain.jobs import ProcessingRun, ProcessingStatus
-from personalization_core.domain.memory import MemoryRecord, PreferenceTarget
+from personalization_core.domain.memory import (
+    MemoryRecord,
+    MemoryRevision,
+    PreferenceTarget,
+)
 from personalization_core.domain.profile import ProfileSnapshot
 from personalization_core.domain.subjects import Subject
 from personalization_core.ports.repositories import (
@@ -40,6 +45,7 @@ from personalization_core.ports.repositories import (
     FeatureStateFilter,
     MemoryFilter,
     MemoryRepository,
+    MemoryRevisionRepository,
     Page,
     ProcessingRunRepository,
     ProfileRepository,
@@ -54,6 +60,7 @@ from .sqlalchemy_models import (
     FeatureStateEvidenceRow,
     FeatureStateRow,
     MemoryEvidenceRow,
+    MemoryRevisionRow,
     MemoryRow,
     ProcessingRunRow,
     ProfileSnapshotRow,
@@ -174,6 +181,22 @@ def _memory(row: MemoryRow, subject: SubjectRef) -> MemoryRecord:
         created_at=row.created_at,
         updated_at=row.updated_at,
         deleted_at=row.deleted_at,
+    )
+
+
+def _memory_revision(row: MemoryRevisionRow, subject: SubjectRef) -> MemoryRevision:
+    return MemoryRevision(
+        id=row.id,
+        subject=subject,
+        memory_id=row.memory_id,
+        revision=row.revision,
+        snapshot=dict(row.snapshot),
+        actor=row.actor,
+        reason=row.reason,
+        transition=(
+            MemoryTransitionType(row.transition) if row.transition is not None else None
+        ),
+        created_at=row.created_at,
     )
 
 
@@ -634,6 +657,18 @@ class SQLAlchemyMemoryRepository(MemoryRepository):
             )
         if filters.key is not None:
             stmt = stmt.where(MemoryRow.key == filters.key)
+        if filters.kind is not None:
+            stmt = stmt.where(MemoryRow.kind == filters.kind.value)
+        if filters.authority is not None:
+            stmt = stmt.where(MemoryRow.authority == filters.authority.value)
+        if filters.scope is not None:
+            stmt = stmt.where(MemoryRow.scope == filters.scope.value)
+        if filters.scope_value is not None:
+            stmt = stmt.where(MemoryRow.scope_value == filters.scope_value)
+        if filters.target_dimension is not None:
+            stmt = stmt.where(MemoryRow.target_dimension == filters.target_dimension)
+        if filters.target_value_key is not None:
+            stmt = stmt.where(MemoryRow.target_value_key == filters.target_value_key)
         rows = (
             await self.session.scalars(
                 stmt.order_by(MemoryRow.updated_at.desc(), MemoryRow.id.desc())
@@ -695,6 +730,77 @@ class SQLAlchemyMemoryRepository(MemoryRepository):
             )
         ).all()
         return list(rows)
+
+
+class SQLAlchemyMemoryRevisionRepository(MemoryRevisionRepository):
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def add(self, subject: SubjectRef, revision: MemoryRevision) -> None:
+        _ensure_scope(subject, revision.subject)
+        pk = await _subject_pk(self.session, subject)
+        if pk is None:
+            raise InvalidArgumentError("subject does not exist")
+        if (
+            await self.session.scalar(
+                select(MemoryRow.id).where(
+                    MemoryRow.id == revision.memory_id, MemoryRow.subject_pk == pk
+                )
+            )
+            is None
+        ):
+            raise InvalidArgumentError("memory does not exist")
+        self.session.add(
+            MemoryRevisionRow(
+                id=revision.id,
+                subject_pk=pk,
+                memory_id=revision.memory_id,
+                revision=revision.revision,
+                snapshot=revision.snapshot,
+                actor=revision.actor,
+                reason=revision.reason,
+                transition=(
+                    revision.transition.value
+                    if revision.transition is not None
+                    else None
+                ),
+                created_at=revision.created_at,
+            )
+        )
+        await _flush(self.session)
+
+    async def get(
+        self, subject: SubjectRef, memory_id: UUID, revision: int
+    ) -> MemoryRevision | None:
+        pk = await _subject_pk(self.session, subject)
+        if pk is None:
+            return None
+        row = await self.session.scalar(
+            select(MemoryRevisionRow).where(
+                MemoryRevisionRow.subject_pk == pk,
+                MemoryRevisionRow.memory_id == memory_id,
+                MemoryRevisionRow.revision == revision,
+            )
+        )
+        return _memory_revision(row, subject) if row else None
+
+    async def list(
+        self, subject: SubjectRef, memory_id: UUID
+    ) -> Sequence[MemoryRevision]:
+        pk = await _subject_pk(self.session, subject)
+        if pk is None:
+            return []
+        rows = (
+            await self.session.scalars(
+                select(MemoryRevisionRow)
+                .where(
+                    MemoryRevisionRow.subject_pk == pk,
+                    MemoryRevisionRow.memory_id == memory_id,
+                )
+                .order_by(MemoryRevisionRow.revision)
+            )
+        ).all()
+        return [_memory_revision(row, subject) for row in rows]
 
 
 class SQLAlchemyFeatureRepository(FeatureRepository):

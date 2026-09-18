@@ -91,9 +91,7 @@ class EventService:
                 await uow.commit()
                 return result
         except InvalidArgumentError as error:
-            return await self._retry_idempotency_race(
-                subject, event_input, error
-            )
+            return await self._retry_idempotency_race(subject, event_input, error)
 
     async def _retry_idempotency_race(
         self,
@@ -124,9 +122,7 @@ class EventService:
             subject, incoming.source, incoming.idempotency_key
         )
         if existing is not None:
-            return await self._replay_or_conflict(
-                uow, subject, event_input, existing
-            )
+            return await self._replay_or_conflict(uow, subject, event_input, existing)
 
         if incoming.entity is not None:
             if incoming.entity.subject != subject:
@@ -253,9 +249,7 @@ class EventService:
             return self._make_batch_result(mode, items)
 
     @staticmethod
-    def _item_from_result(
-        index: int, result: EventIngestionResult
-    ) -> BatchItemResult:
+    def _item_from_result(index: int, result: EventIngestionResult) -> BatchItemResult:
         return BatchItemResult(
             index=index,
             status=result.status,

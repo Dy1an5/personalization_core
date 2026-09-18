@@ -10,6 +10,7 @@ from .repositories import (
     EvidenceRepository,
     FeatureRepository,
     MemoryRepository,
+    MemoryRevisionRepository,
     ProcessingRunRepository,
     ProfileRepository,
     SubjectRepository,
@@ -36,6 +37,10 @@ class UnitOfWork(Protocol):
 
     @property
     def memories(self) -> MemoryRepository:
+        raise NotImplementedError
+
+    @property
+    def memory_revisions(self) -> MemoryRevisionRepository:
         raise NotImplementedError
 
     @property

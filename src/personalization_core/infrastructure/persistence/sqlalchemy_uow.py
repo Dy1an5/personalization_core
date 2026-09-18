@@ -11,6 +11,7 @@ from personalization_core.ports.repositories import (
     EvidenceRepository,
     FeatureRepository,
     MemoryRepository,
+    MemoryRevisionRepository,
     ProcessingRunRepository,
     ProfileRepository,
     SubjectRepository,
@@ -23,6 +24,7 @@ from .repositories import (
     SQLAlchemyEvidenceRepository,
     SQLAlchemyFeatureRepository,
     SQLAlchemyMemoryRepository,
+    SQLAlchemyMemoryRevisionRepository,
     SQLAlchemyProcessingRunRepository,
     SQLAlchemyProfileRepository,
     SQLAlchemySubjectRepository,
@@ -72,6 +74,12 @@ class SQLAlchemyUnitOfWork(UnitOfWork):
         return cast(MemoryRepository, self._repositories["memories"])
 
     @property
+    def memory_revisions(self):
+        if self._session is None:
+            raise RuntimeError("unit of work is not active")
+        return cast(MemoryRevisionRepository, self._repositories["memory_revisions"])
+
+    @property
     def features(self):
         if self._session is None:
             raise RuntimeError("unit of work is not active")
@@ -100,6 +108,7 @@ class SQLAlchemyUnitOfWork(UnitOfWork):
             "events": SQLAlchemyEventRepository(self._session),
             "evidence": SQLAlchemyEvidenceRepository(self._session),
             "memories": SQLAlchemyMemoryRepository(self._session),
+            "memory_revisions": SQLAlchemyMemoryRevisionRepository(self._session),
             "features": SQLAlchemyFeatureRepository(self._session),
             "profiles": SQLAlchemyProfileRepository(self._session),
             "processing_runs": SQLAlchemyProcessingRunRepository(self._session),

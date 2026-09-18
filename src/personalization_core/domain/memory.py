@@ -148,6 +148,26 @@ class MemoryRecord(StrictFrozenDomainModel):
         return self
 
 
+class MemoryRevision(StrictFrozenDomainModel):
+    """不可变的 Memory revision 审计快照。"""
+
+    id: UUID
+    subject: SubjectRef
+    memory_id: UUID
+    revision: int = Field(ge=1)
+    snapshot: dict[str, JsonValue]
+    actor: NonEmptyString
+    reason: NonEmptyString
+    transition: MemoryTransitionType | None = None
+    created_at: UtcDatetime
+
+
+def to_revision_snapshot(memory: MemoryRecord) -> dict[str, JsonValue]:
+    """Return the JSON-compatible post-state snapshot for a revision."""
+
+    return memory.model_dump(mode="json")
+
+
 class MemoryTransition(StrictFrozenDomainModel):
     """
     描述一次领域状态变化

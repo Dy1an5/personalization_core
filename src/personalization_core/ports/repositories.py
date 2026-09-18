@@ -9,13 +9,19 @@ from typing import Protocol, runtime_checkable
 from uuid import UUID
 
 from personalization_core.domain.entities import Entity
-from personalization_core.domain.enums import MemoryState, Polarity
+from personalization_core.domain.enums import (
+    MemoryAuthority,
+    MemoryKind,
+    MemoryScope,
+    MemoryState,
+    Polarity,
+)
 from personalization_core.domain.events import Event
 from personalization_core.domain.evidence import Evidence
 from personalization_core.domain.features import FeatureObservation, FeatureState
 from personalization_core.domain.identifiers import EntityRef, SubjectRef
 from personalization_core.domain.jobs import ProcessingRun
-from personalization_core.domain.memory import MemoryRecord
+from personalization_core.domain.memory import MemoryRecord, MemoryRevision
 from personalization_core.domain.profile import ProfileSnapshot
 from personalization_core.domain.subjects import Subject
 
@@ -58,6 +64,12 @@ class EventFilter:
 class MemoryFilter:
     states: frozenset[MemoryState] | None = None
     key: str | None = None
+    kind: MemoryKind | None = None
+    authority: MemoryAuthority | None = None
+    scope: MemoryScope | None = None
+    scope_value: str | None = None
+    target_dimension: str | None = None
+    target_value_key: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -162,6 +174,22 @@ class MemoryRepository(Protocol):
     async def list_evidence_ids(
         self, subject: SubjectRef, memory_id: UUID
     ) -> Sequence[UUID]:
+        raise NotImplementedError
+
+
+@runtime_checkable
+class MemoryRevisionRepository(Protocol):
+    async def add(self, subject: SubjectRef, revision: MemoryRevision) -> None:
+        raise NotImplementedError
+
+    async def get(
+        self, subject: SubjectRef, memory_id: UUID, revision: int
+    ) -> MemoryRevision | None:
+        raise NotImplementedError
+
+    async def list(
+        self, subject: SubjectRef, memory_id: UUID
+    ) -> Sequence[MemoryRevision]:
         raise NotImplementedError
 
 
