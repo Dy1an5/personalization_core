@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import datetime
 from enum import IntEnum, StrEnum
@@ -348,3 +349,92 @@ class ProfileDiff(StrictFrozenDomainModel):
         if len(set(keys)) != len(keys):
             raise ValueError("duplicate change entries")
         return self
+
+
+def profile_content_digest(snapshot: ProfileSnapshot) -> str:
+    """Return a stable digest for the semantic contents of a snapshot.
+
+    Snapshot identity, version, and generation time deliberately do not take
+    part in the digest.  Preference and warning ordering is normalized here as
+    a second line of defence for callers constructing snapshots directly.
+    """
+
+    content = {
+        "subject": snapshot.subject.model_dump(mode="json"),
+        "status": snapshot.status.value,
+        "algorithm_version": snapshot.algorithm_version,
+        "source_watermark": (
+            snapshot.source_watermark.isoformat()
+            if snapshot.source_watermark is not None
+            else None
+        ),
+        "coverage": snapshot.coverage.model_dump(mode="json"),
+        "preferences": [
+            preference.model_dump(mode="json")
+            for preference in sorted(
+                snapshot.preferences,
+                key=lambda item: (item.dimension, item.value_key),
+            )
+        ],
+        "warnings": sorted(snapshot.warnings),
+    }
+    canonical = json.dumps(
+        content,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
+
+
+def diff_profile_snapshots(
+    left: ProfileSnapshot, right: ProfileSnapshot
+) -> ProfileDiff:
+    """Explain preference changes between two snapshots of one subject."""
+
+    if left.subject != right.subject:
+        raise ValueError("profile snapshots must belong to the same subject")
+
+    left_by_key = {(item.dimension, item.value_key): item for item in left.preferences}
+    right_by_key = {
+        (item.dimension, item.value_key): item for item in right.preferences
+    }
+    changes: list[PreferenceChange] = []
+    for key in sorted(set(left_by_key) | set(right_by_key)):
+        before = left_by_key.get(key)
+        after = right_by_key.get(key)
+        if before is None:
+            kind = PreferenceChangeKind.ADDED
+        elif after is None:
+            kind = PreferenceChangeKind.REMOVED
+        elif before.conflicts != after.conflicts:
+            kind = PreferenceChangeKind.CONFLICT_CHANGED
+        elif before == after:
+            continue
+        elif before.effective_polarity != after.effective_polarity:
+            kind = PreferenceChangeKind.CHANGED
+        else:
+            delta = abs(after.effective_score) - abs(before.effective_score)
+            if delta > 0:
+                kind = PreferenceChangeKind.STRENGTHENED
+            elif delta < 0:
+                kind = PreferenceChangeKind.WEAKENED
+            else:
+                kind = PreferenceChangeKind.CHANGED
+        changes.append(
+            PreferenceChange(
+                dimension=key[0],
+                value_key=key[1],
+                kind=kind,
+                before=before,
+                after=after,
+            )
+        )
+
+    return ProfileDiff(
+        subject=left.subject,
+        left_version=left.version,
+        right_version=right.version,
+        changes=changes,
+    )

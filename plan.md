@@ -1077,26 +1077,26 @@ class SemanticEnricher(Protocol):
 
 ### 阶段 10：实现 Profile Resolver
 
-- [ ] 10.1 按作用域筛选 active Memory。
-- [ ] 10.2 按时间有效性筛选 Memory。
-- [ ] 10.3 加载 long-term 和 short-term Feature State。
-- [ ] 10.4 实现明确偏好与行为一致判定。
-- [ ] 10.5 实现明确偏好覆盖行为判定。
-- [ ] 10.6 实现无法自动解决的冲突保留。
-- [ ] 10.7 实现 Profile Coverage 统计。
-- [ ] 10.8 实现 Snapshot 版本递增。
-- [ ] 10.9 实现无变化刷新检测。
-- [ ] 10.10 无变化时默认返回原 Snapshot，不生成重复版本。
-- [ ] 10.11 提供 `force_new_snapshot` 覆盖选项。
-- [ ] 10.12 实现 Snapshot Diff。
-- [ ] 10.13 测试同输入生成稳定相同内容摘要。
-- [ ] 10.14 测试 explicit Memory 永远不被行为结果覆盖。
+- [x] 10.1 按作用域筛选 active Memory。
+- [x] 10.2 按时间有效性筛选 Memory。
+- [x] 10.3 加载 long-term 和 short-term Feature State。
+- [x] 10.4 实现明确偏好与行为一致判定。
+- [x] 10.5 实现明确偏好覆盖行为判定。
+- [x] 10.6 实现无法自动解决的冲突保留。
+- [x] 10.7 实现 Profile Coverage 统计。
+- [x] 10.8 实现 Snapshot 版本递增。
+- [x] 10.9 实现无变化刷新检测。
+- [x] 10.10 无变化时默认返回原 Snapshot，不生成重复版本。
+- [x] 10.11 提供 `force_new_snapshot` 覆盖选项。
+- [x] 10.12 实现 Snapshot Diff。
+- [x] 10.13 测试同输入生成稳定相同内容摘要。
+- [x] 10.14 测试 explicit Memory 永远不被行为结果覆盖。
 
 阶段验收：
 
-- [ ] Profile 是可重建派生视图。
-- [ ] 无数据变化的 refresh 不制造无意义版本。
-- [ ] Snapshot Diff 能说明新增、删除、增强、减弱和冲突变化。
+- [x] Profile 是可重建派生视图。
+- [x] 无数据变化的 refresh 不制造无意义版本。
+- [x] Snapshot Diff 能说明新增、删除、增强、减弱和冲突变化。
 
 ### 阶段 11：实现 Memory 检索和 Context Resolver
 

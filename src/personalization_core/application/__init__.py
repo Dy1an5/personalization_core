@@ -7,9 +7,11 @@ from .dto import (
     EventIngestionStatus,
     EventPage,
     FeatureProcessingResult,
+    ProfileRefreshOptions,
 )
 from .event_service import EventService
 from .feature_service import FeatureService
+from .profile_service import ProfileService
 from .subject_service import SubjectService
 
 __all__ = [
@@ -23,5 +25,7 @@ __all__ = [
     "EventService",
     "FeatureProcessingResult",
     "FeatureService",
+    "ProfileRefreshOptions",
+    "ProfileService",
     "SubjectService",
 ]

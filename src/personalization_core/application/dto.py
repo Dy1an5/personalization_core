@@ -133,3 +133,11 @@ class FeatureProcessingResult(StrictFrozenDomainModel):
     replayed_observation_count: int = Field(ge=0, strict=True)
     updated_state_count: int = Field(ge=0, strict=True)
     run: ProcessingRun
+
+
+class ProfileRefreshOptions(StrictFrozenDomainModel):
+    as_of: UtcDatetime | None = None
+    use_case: NonEmptyString | None = None
+    topic: NonEmptyString | None = None
+    entity: NonEmptyString | None = None
+    force_new_snapshot: bool = False
