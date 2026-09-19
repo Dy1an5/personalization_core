@@ -1,0 +1,22 @@
+name: External evaluation
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * 1"
+
+jobs:
+  external:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+      - name: Set up Python
+        run: uv python install 3.11
+      - name: Install dependencies
+        run: uv sync
+      - name: Run explicitly enabled external evaluation tests
+        env:
+          EVAL_EXTERNAL: "1"
+        run: uv run pytest -m external

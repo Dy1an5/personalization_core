@@ -24,4 +24,14 @@ command.md
 
 /docs
 
+# Keep only the current phase design and evaluation tests visible to version control.
+!/docs/
+docs/*
+!/docs/phase16.md
+!/tests/
+tests/*
+!/tests/evaluation/
+tests/evaluation/*
+!/tests/evaluation/*.py
+
 personalization.db

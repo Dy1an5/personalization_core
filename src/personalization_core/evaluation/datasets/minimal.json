@@ -1,0 +1,122 @@
+{
+  "memory_extraction": [
+    {
+      "case_id": "explicit-preference",
+      "expected_keys": ["memory:quiet", "memory:film"],
+      "predicted_keys": ["memory:quiet", "memory:film"]
+    },
+    {
+      "case_id": "reversed-preference",
+      "expected_keys": ["memory:genre-reversal"],
+      "predicted_keys": ["memory:genre-reversal"]
+    },
+    {
+      "case_id": "short-term-interest",
+      "expected_keys": ["memory:short-term-science"],
+      "predicted_keys": ["memory:short-term-science"]
+    }
+  ],
+  "memory_retrieval": [
+    {
+      "case_id": "retrieval-explicit",
+      "relevant_ids": ["memory:quiet"],
+      "ranked_ids": ["memory:quiet", "memory:film", "memory:other"],
+      "k": 5
+    },
+    {
+      "case_id": "retrieval-reversal",
+      "relevant_ids": ["memory:genre-reversal"],
+      "ranked_ids": ["memory:genre-reversal", "memory:other"],
+      "k": 5
+    },
+    {
+      "case_id": "retrieval-short-term",
+      "relevant_ids": ["memory:short-term-science"],
+      "ranked_ids": ["memory:short-term-science", "memory:other"],
+      "k": 5
+    }
+  ],
+  "preference_conflicts": [
+    {
+      "case_id": "aligned",
+      "expected_resolution": "aligned",
+      "observed_resolution": "aligned"
+    },
+    {
+      "case_id": "reversal-overridden",
+      "expected_resolution": "explicit_overrides_behavior",
+      "observed_resolution": "explicit_overrides_behavior"
+    },
+    {
+      "case_id": "unknown-conflict",
+      "expected_resolution": "unresolved_conflict",
+      "observed_resolution": "unresolved_conflict"
+    }
+  ],
+  "constraint_retention": [
+    {
+      "case_id": "hard-constraints",
+      "constraint_ids": ["constraint:no-spoilers", "constraint:under-18"],
+      "retained_ids": ["constraint:no-spoilers", "constraint:under-18"]
+    }
+  ],
+  "profiles": [
+    {
+      "case_id": "stable-profile",
+      "before": [
+        {"dimension": "topic", "value_key": "cinema", "state": "positive"}
+      ],
+      "after": [
+        {"dimension": "topic", "value_key": "cinema", "state": "positive"}
+      ],
+      "expected_changed": []
+    },
+    {
+      "case_id": "reversed-profile",
+      "before": [
+        {"dimension": "topic", "value_key": "horror", "state": "positive"}
+      ],
+      "after": [
+        {"dimension": "topic", "value_key": "horror", "state": "negative"}
+      ],
+      "expected_changed": ["topic:horror"]
+    },
+    {
+      "case_id": "short-term-profile",
+      "before": [
+        {"dimension": "topic", "value_key": "cinema", "state": "positive"}
+      ],
+      "after": [
+        {"dimension": "topic", "value_key": "cinema", "state": "positive"},
+        {"dimension": "topic", "value_key": "science", "state": "recent"}
+      ],
+      "expected_changed": ["topic:science"]
+    }
+  ],
+  "tenant_isolation": [
+    {
+      "case_id": "tenant-a-only",
+      "allowed_ids": ["subject:a"],
+      "returned_ids": ["subject:a"],
+      "foreign_ids": ["subject:b"]
+    },
+    {
+      "case_id": "tenant-b-only",
+      "allowed_ids": ["subject:b"],
+      "returned_ids": ["subject:b"],
+      "foreign_ids": ["subject:a"]
+    }
+  ],
+  "provider_failures": [
+    {
+      "case_id": "timeout-mapping",
+      "expected_error_code": "PROVIDER_TIMEOUT",
+      "observed_error_code": "PROVIDER_TIMEOUT"
+    },
+    {
+      "case_id": "invalid-response-mapping",
+      "expected_error_code": "PROVIDER_INVALID_RESPONSE",
+      "observed_error_code": "PROVIDER_INVALID_RESPONSE"
+    }
+  ]
+}

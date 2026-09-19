@@ -18,6 +18,7 @@ dependencies = [
 
 [project.scripts]
 personalization-core = "personalization_core:main"
+personalization-core-eval = "personalization_core.evaluation.cli:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -63,5 +64,6 @@ markers = [
     "contract: tests that verify public interfaces and data contracts",
     "integration: tests involving multiple internal components or real infrastructure",
     "e2e: end-to-end tests covering a complete user-facing workflow",
+    "external: evaluations that require an explicitly enabled external provider",
 ]
 addopts = ["--strict-markers"]

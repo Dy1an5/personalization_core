@@ -1241,19 +1241,19 @@ context = client.context.resolve(
 
 ### 阶段 16：评测框架
 
-- [ ] 16.1 定义 Memory Extraction Precision/Recall 数据格式。
-- [ ] 16.2 定义 Memory Retrieval Recall@K 和 MRR。
-- [ ] 16.3 定义 Preference Conflict Accuracy。
-- [ ] 16.4 定义 Context Constraint Retention Rate。
-- [ ] 16.5 定义 Profile Stability 和 Change Sensitivity。
-- [ ] 16.6 创建最小匿名合成数据集。
-- [ ] 16.7 创建明确偏好、反转偏好、短期兴趣测试集。
-- [ ] 16.8 创建跨租户泄露负向测试集。
-- [ ] 16.9 创建 Provider 故障测试集。
-- [ ] 16.10 实现评测 CLI。
-- [ ] 16.11 输出 JSON 和 Markdown 报告。
-- [ ] 16.12 将确定性评测加入 CI。
-- [ ] 16.13 将需要外部模型的评测放入手动或定时 CI。
+- [x] 16.1 定义 Memory Extraction Precision/Recall 数据格式。
+- [x] 16.2 定义 Memory Retrieval Recall@K 和 MRR。
+- [x] 16.3 定义 Preference Conflict Accuracy。
+- [x] 16.4 定义 Context Constraint Retention Rate。
+- [x] 16.5 定义 Profile Stability 和 Change Sensitivity。
+- [x] 16.6 创建最小匿名合成数据集。
+- [x] 16.7 创建明确偏好、反转偏好、短期兴趣测试集。
+- [x] 16.8 创建跨租户泄露负向测试集。
+- [x] 16.9 创建 Provider 故障测试集。
+- [x] 16.10 实现评测 CLI。
+- [x] 16.11 输出 JSON 和 Markdown 报告。
+- [x] 16.12 将确定性评测加入 CI。
+- [x] 16.13 将需要外部模型的评测放入手动或定时 CI。
 
 `0.1.0` 最低指标：
 
