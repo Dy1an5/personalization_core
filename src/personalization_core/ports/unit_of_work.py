@@ -4,6 +4,8 @@ from collections.abc import Callable
 from types import TracebackType
 from typing import Protocol, runtime_checkable
 
+from personalization_core.domain.identifiers import SubjectRef
+
 from .repositories import (
     EntityRepository,
     EventRepository,
@@ -70,6 +72,10 @@ class UnitOfWork(Protocol):
         raise NotImplementedError
 
     async def rollback(self) -> None:
+        raise NotImplementedError
+
+    async def purge_subject(self, subject: SubjectRef) -> None:
+        """Permanently remove all persisted data for one subject scope."""
         raise NotImplementedError
 
 

@@ -15,8 +15,16 @@ from personalization_core.domain.enums import (
 from personalization_core.domain.errors import ErrorCode
 from personalization_core.domain.events import Event, EventCreate
 from personalization_core.domain.evidence import Evidence, EvidenceCreate
+from personalization_core.domain.features import FeatureObservation, FeatureState
+from personalization_core.domain.identifiers import SubjectRef
 from personalization_core.domain.jobs import ProcessingRun
-from personalization_core.domain.memory import MemoryRecord, PreferenceTarget
+from personalization_core.domain.memory import (
+    MemoryRecord,
+    MemoryRevision,
+    PreferenceTarget,
+)
+from personalization_core.domain.profile import ProfileSnapshot
+from personalization_core.domain.subjects import Subject
 from personalization_core.domain.types import JsonValue, NonEmptyString, UtcDatetime
 
 PageLimit = Annotated[int, Field(ge=1, le=200)]
@@ -141,3 +149,48 @@ class ProfileRefreshOptions(StrictFrozenDomainModel):
     topic: NonEmptyString | None = None
     entity: NonEmptyString | None = None
     force_new_snapshot: bool = False
+
+
+class ExportEntity(StrictFrozenDomainModel):
+    """Validated wire representation for the legacy non-Pydantic Entity model."""
+
+    id: UUID
+    subject: SubjectRef
+    entity_type: str
+    external_id: str
+    attributes: dict[str, JsonValue]
+    content_text: str | None
+    content_hash: str | None
+    schema_version: str
+    first_seen_at: UtcDatetime
+    last_seen_at: UtcDatetime
+    deleted_at: UtcDatetime | None
+
+
+class MemoryEvidenceBinding(StrictFrozenDomainModel):
+    memory_id: UUID
+    evidence_id: UUID
+
+
+class SubjectExport(StrictFrozenDomainModel):
+    subject: Subject
+    exported_at: UtcDatetime
+    entities: list[ExportEntity] = Field(default_factory=list[ExportEntity])
+    events: list[Event] = Field(default_factory=list[Event])
+    evidence: list[Evidence] = Field(default_factory=list[Evidence])
+    memories: list[MemoryRecord] = Field(default_factory=list[MemoryRecord])
+    memory_revisions: list[MemoryRevision] = Field(default_factory=list[MemoryRevision])
+    memory_evidence: list[MemoryEvidenceBinding] = Field(
+        default_factory=list[MemoryEvidenceBinding]
+    )
+    feature_observations: list[FeatureObservation] = Field(
+        default_factory=list[FeatureObservation]
+    )
+    feature_states: list[FeatureState] = Field(default_factory=list[FeatureState])
+    profiles: list[ProfileSnapshot] = Field(default_factory=list[ProfileSnapshot])
+    processing_runs: list[ProcessingRun] = Field(default_factory=list[ProcessingRun])
+
+
+class PurgeResult(StrictFrozenDomainModel):
+    subject: SubjectRef
+    purged: bool = True

@@ -410,6 +410,22 @@ class PersonalizationEngine:
         return self._subject_service
 
     @property
+    def event_service(self) -> EventService:
+        return self.events._service
+
+    @property
+    def memory_service(self) -> MemoryService:
+        return self.memories._service
+
+    @property
+    def profile_service(self) -> ProfileService:
+        return self.profiles._service
+
+    @property
+    def context_service(self) -> ContextService:
+        return self.context._service
+
+    @property
     def clock(self) -> Clock:
         return self._clock
 

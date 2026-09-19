@@ -112,6 +112,12 @@ class MemoryService:
             )
         )
 
+    async def get_memory(self, subject: SubjectRef, memory_id: UUID) -> MemoryRecord:
+        """Return one Memory after applying the normal subject-scope checks."""
+        async with self._uow_factory() as uow:
+            await self._require_subject(uow, subject)
+            return await self._get_memory(uow, subject, memory_id)
+
     async def add_memory(
         self, subject: SubjectRef, input: MemoryCreateInput
     ) -> MemoryRecord:

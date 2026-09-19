@@ -3,8 +3,10 @@ from __future__ import annotations
 from types import TracebackType
 from typing import cast
 
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
+from personalization_core.domain.identifiers import SubjectRef
 from personalization_core.ports.repositories import (
     EntityRepository,
     EventRepository,
@@ -28,6 +30,21 @@ from .repositories import (
     SQLAlchemyProcessingRunRepository,
     SQLAlchemyProfileRepository,
     SQLAlchemySubjectRepository,
+)
+from .sqlalchemy_models import (
+    AuditLogRow,
+    EntityRow,
+    EventRow,
+    EvidenceRow,
+    FeatureObservationRow,
+    FeatureStateEvidenceRow,
+    FeatureStateRow,
+    MemoryEvidenceRow,
+    MemoryRevisionRow,
+    MemoryRow,
+    ProcessingRunRow,
+    ProfileSnapshotRow,
+    SubjectRow,
 )
 
 
@@ -141,6 +158,71 @@ class SQLAlchemyUnitOfWork(UnitOfWork):
         session = self._require_session()
         await session.rollback()
         self._committed = False
+
+    async def purge_subject(self, subject: SubjectRef) -> None:
+        session = self._require_session()
+        subject_pk = await session.scalar(
+            select(SubjectRow.id).where(
+                SubjectRow.tenant_id == subject.tenant_id.root,
+                SubjectRow.namespace == subject.namespace.root,
+                SubjectRow.external_subject_id == subject.subject_id.root,
+            )
+        )
+        if subject_pk is None:
+            return
+
+        # Several child tables deliberately use NO ACTION constraints.  Delete
+        # those rows explicitly in dependency order so purge is portable across
+        # SQLite and PostgreSQL and remains one UoW transaction.
+        await session.execute(
+            delete(AuditLogRow).where(AuditLogRow.subject_pk == subject_pk)
+        )
+        await session.execute(
+            delete(FeatureStateEvidenceRow).where(
+                FeatureStateEvidenceRow.feature_state_id.in_(
+                    select(FeatureStateRow.id).where(
+                        FeatureStateRow.subject_pk == subject_pk
+                    )
+                )
+            )
+        )
+        await session.execute(
+            delete(MemoryEvidenceRow).where(
+                MemoryEvidenceRow.memory_id.in_(
+                    select(MemoryRow.id).where(MemoryRow.subject_pk == subject_pk)
+                )
+            )
+        )
+        await session.execute(
+            delete(FeatureObservationRow).where(
+                FeatureObservationRow.subject_pk == subject_pk
+            )
+        )
+        await session.execute(
+            delete(MemoryRevisionRow).where(MemoryRevisionRow.subject_pk == subject_pk)
+        )
+        await session.execute(
+            delete(ProfileSnapshotRow).where(
+                ProfileSnapshotRow.subject_pk == subject_pk
+            )
+        )
+        await session.execute(
+            delete(ProcessingRunRow).where(ProcessingRunRow.subject_pk == subject_pk)
+        )
+        await session.execute(
+            delete(FeatureStateRow).where(FeatureStateRow.subject_pk == subject_pk)
+        )
+        await session.execute(
+            delete(MemoryRow).where(MemoryRow.subject_pk == subject_pk)
+        )
+        await session.execute(
+            delete(EvidenceRow).where(EvidenceRow.subject_pk == subject_pk)
+        )
+        await session.execute(delete(EventRow).where(EventRow.subject_pk == subject_pk))
+        await session.execute(
+            delete(EntityRow).where(EntityRow.subject_pk == subject_pk)
+        )
+        await session.execute(delete(SubjectRow).where(SubjectRow.id == subject_pk))
 
 
 class SQLAlchemyUnitOfWorkFactory:

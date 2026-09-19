@@ -1153,22 +1153,22 @@ async with PersonalizationEngine.from_sqlite("personalization.db") as engine:
 
 ### 阶段 13：实现 HTTP API
 
-- [ ] 13.1 创建 FastAPI App Factory。
-- [ ] 13.2 实现 request ID middleware。
-- [ ] 13.3 实现 Bearer Token 到 tenant 的认证端口。
-- [ ] 13.4 实现 namespace 解析。
-- [ ] 13.5 实现统一成功响应和错误响应。
-- [ ] 13.6 实现 Event 路由。
-- [ ] 13.7 实现 Memory 路由。
-- [ ] 13.8 实现 Profile 路由。
-- [ ] 13.9 实现 Context 路由。
-- [ ] 13.10 实现 Subject export/delete/purge 路由。
-- [ ] 13.11 生成并固定 OpenAPI snapshot。
-- [ ] 13.12 测试所有 error code 到 HTTP status 的映射。
-- [ ] 13.13 测试租户 Header 无法覆盖 Token 绑定租户。
-- [ ] 13.14 测试 Event Idempotency-Key。
-- [ ] 13.15 测试请求大小、批量数量和分页上限。
-- [ ] 13.16 添加超时和 Provider 错误映射。
+- [x] 13.1 创建 FastAPI App Factory。
+- [x] 13.2 实现 request ID middleware。
+- [x] 13.3 实现 Bearer Token 到 tenant 的认证端口。
+- [x] 13.4 实现 namespace 解析。
+- [x] 13.5 实现统一成功响应和错误响应。
+- [x] 13.6 实现 Event 路由。
+- [x] 13.7 实现 Memory 路由。
+- [x] 13.8 实现 Profile 路由。
+- [x] 13.9 实现 Context 路由。
+- [x] 13.10 实现 Subject export/delete/purge 路由。
+- [x] 13.11 生成并固定 OpenAPI snapshot。
+- [x] 13.12 测试所有 error code 到 HTTP status 的映射。
+- [x] 13.13 测试租户 Header 无法覆盖 Token 绑定租户。
+- [x] 13.14 测试 Event Idempotency-Key。
+- [x] 13.15 测试请求大小、批量数量和分页上限。
+- [x] 13.16 添加超时和 Provider 错误映射。
 
 建议限制：
 
