@@ -1,0 +1,10 @@
+{
+  "article": {
+    "article_id": "article-anon-003",
+    "title": "匿名数据工程文章",
+    "topics": ["data", "python"]
+  },
+  "event_id": "read-anon-003",
+  "occurred_at": "2026-09-19T04:05:00Z",
+  "progress": 0.75
+}

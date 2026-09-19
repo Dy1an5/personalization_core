@@ -16,6 +16,7 @@ from personalization_core.application.dto import (
     EventIngestionInput,
     EventIngestionResult,
     EventPage,
+    FeatureProcessingResult,
     MemoryCreateInput,
     MemoryExtractionResult,
     MemoryPage,
@@ -25,12 +26,15 @@ from personalization_core.application.dto import (
     SubjectExport,
 )
 from personalization_core.application.event_service import EventService
+from personalization_core.application.feature_service import FeatureService
 from personalization_core.application.memory_service import MemoryService
 from personalization_core.application.profile_service import ProfileService
 from personalization_core.application.subject_service import SubjectService
 from personalization_core.domain.context import ContextBundle, ContextRequest
 from personalization_core.domain.entities import Entity, EntityCreate
+from personalization_core.domain.features import FeatureState
 from personalization_core.domain.identifiers import SubjectRef
+from personalization_core.domain.jobs import ProcessingRun
 from personalization_core.domain.memory import MemoryRecord
 from personalization_core.domain.profile import ProfileDiff, ProfileSnapshot
 from personalization_core.domain.subjects import Subject
@@ -46,6 +50,7 @@ from personalization_core.infrastructure.persistence.sqlalchemy_models import Ba
 from personalization_core.infrastructure.persistence.sqlalchemy_uow import (
     create_uow_factory,
 )
+from personalization_core.plugins.registry import FeatureExtractorRegistry
 from personalization_core.ports.audit_sink import AuditSink
 from personalization_core.ports.clock import Clock
 from personalization_core.ports.embedder import Embedder
@@ -59,7 +64,12 @@ from personalization_core.ports.purge_tokens import (
     PurgeToken,
     PurgeTokenStore,
 )
-from personalization_core.ports.repositories import EventFilter, MemoryFilter, Page
+from personalization_core.ports.repositories import (
+    EventFilter,
+    FeatureStateFilter,
+    MemoryFilter,
+    Page,
+)
 from personalization_core.ports.reranker import Reranker
 from personalization_core.ports.retention import RetentionHook
 from personalization_core.ports.unit_of_work import UnitOfWorkFactory
@@ -117,6 +127,38 @@ class EventOperations:
         page: Page | None = None,
     ) -> EventPage:
         return await self.list_events(subject, filters, page)
+
+
+class FeatureOperations:
+    def __init__(self, engine: PersonalizationEngine, service: FeatureService) -> None:
+        self._engine = engine
+        self._service = service
+
+    async def process_event(
+        self, subject: SubjectRef, event_id: UUID
+    ) -> FeatureProcessingResult:
+        self._engine._ensure_open()
+        return await self._service.process_event(subject, event_id)
+
+    async def process_pending(
+        self, subject: SubjectRef, limit: int = 50
+    ) -> ProcessingRun:
+        self._engine._ensure_open()
+        return await self._service.process_pending(subject, limit)
+
+    async def rebuild_dimension(
+        self, subject: SubjectRef, dimension: str
+    ) -> ProcessingRun:
+        self._engine._ensure_open()
+        return await self._service.rebuild_dimension(subject, dimension)
+
+    async def list_states(
+        self,
+        subject: SubjectRef,
+        filters: FeatureStateFilter | None = None,
+    ) -> list[FeatureState]:
+        self._engine._ensure_open()
+        return await self._service.list_feature_states(subject, filters)
 
 
 class MemoryOperations:
@@ -354,6 +396,7 @@ class PersonalizationEngine:
         memory_service: MemoryService,
         profile_service: ProfileService,
         context_service: ContextService,
+        feature_service: FeatureService | None = None,
         engine: AsyncEngine | None = None,
         owns_engine: bool = False,
         schema_initializer: _SchemaInitializer | None = None,
@@ -367,6 +410,16 @@ class PersonalizationEngine:
         self._initialized = False
         self._closed = False
         self.events = EventOperations(self, event_service)
+        self.features = FeatureOperations(
+            self,
+            feature_service
+            or FeatureService(
+                uow_factory,
+                clock,
+                subject_service,
+                FeatureExtractorRegistry.with_builtins(),
+            ),
+        )
         self.memories = MemoryOperations(self, memory_service)
         self.profiles = ProfileOperations(self, profile_service)
         self.context = ContextOperations(self, context_service)
@@ -388,6 +441,7 @@ class PersonalizationEngine:
         purge_token_store: PurgeTokenStore | None = None,
         retention_hook: RetentionHook | None = None,
         metrics: MetricsRegistry | None = None,
+        feature_registry: FeatureExtractorRegistry | None = None,
     ) -> PersonalizationEngine:
         active_clock = clock or SystemClock()
         active_token_store = purge_token_store or InMemoryPurgeTokenStore()
@@ -436,6 +490,13 @@ class PersonalizationEngine:
             audit_sink=active_audit_sink,
             metrics=metrics,
         )
+        feature_service = FeatureService(
+            uow_factory,
+            active_clock,
+            subject_service,
+            feature_registry or FeatureExtractorRegistry.with_builtins(),
+            metrics=metrics,
+        )
         return cls(
             uow_factory=uow_factory,
             clock=active_clock,
@@ -444,11 +505,17 @@ class PersonalizationEngine:
             memory_service=memory_service,
             profile_service=profile_service,
             context_service=context_service,
+            feature_service=feature_service,
             engine=engine,
         )
 
     @classmethod
-    def from_sqlite(cls, path: str | Path = ":memory:") -> PersonalizationEngine:
+    def from_sqlite(
+        cls,
+        path: str | Path = ":memory:",
+        *,
+        feature_registry: FeatureExtractorRegistry | None = None,
+    ) -> PersonalizationEngine:
         path_text = str(path)
         if path_text not in {":memory:", ""}:
             Path(path).expanduser().resolve().parent.mkdir(parents=True, exist_ok=True)
@@ -466,6 +533,7 @@ class PersonalizationEngine:
             uow_factory=uow_factory,
             clock=active_clock,
             engine=db_engine,
+            feature_registry=feature_registry,
         )
         sdk._owns_engine = True
         sdk._schema_initializer = initialize_schema
@@ -477,6 +545,7 @@ class PersonalizationEngine:
         url: str,
         *,
         settings: DatabaseSettings | None = None,
+        feature_registry: FeatureExtractorRegistry | None = None,
         **kwargs: Any,
     ) -> PersonalizationEngine:
         """Create a Server engine using the same application services as SQLite."""
@@ -487,6 +556,7 @@ class PersonalizationEngine:
         sdk = cls.from_components(
             uow_factory=uow_factory,
             engine=db_engine,
+            feature_registry=feature_registry,
             **kwargs,
         )
         sdk._owns_engine = True
@@ -498,11 +568,17 @@ class PersonalizationEngine:
         url: str,
         *,
         settings: DatabaseSettings | None = None,
+        feature_registry: FeatureExtractorRegistry | None = None,
         **kwargs: Any,
     ) -> PersonalizationEngine:
         if not url.startswith("postgresql+asyncpg://"):
             raise ValueError("PostgreSQL URL must use the postgresql+asyncpg driver")
-        return cls.from_database(url, settings=settings, **kwargs)
+        return cls.from_database(
+            url,
+            settings=settings,
+            feature_registry=feature_registry,
+            **kwargs,
+        )
 
     @property
     def subject_service(self) -> SubjectService:
@@ -523,6 +599,10 @@ class PersonalizationEngine:
     @property
     def context_service(self) -> ContextService:
         return self.context._service
+
+    @property
+    def feature_service(self) -> FeatureService:
+        return self.features._service
 
     @property
     def clock(self) -> Clock:
@@ -586,6 +666,7 @@ def from_components(
     purge_token_store: PurgeTokenStore | None = None,
     retention_hook: RetentionHook | None = None,
     metrics: MetricsRegistry | None = None,
+    feature_registry: FeatureExtractorRegistry | None = None,
 ) -> PersonalizationEngine:
     return PersonalizationEngine.from_components(
         uow_factory=uow_factory,
@@ -600,4 +681,5 @@ def from_components(
         purge_token_store=purge_token_store,
         retention_hook=retention_hook,
         metrics=metrics,
+        feature_registry=feature_registry,
     )

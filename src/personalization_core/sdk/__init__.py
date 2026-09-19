@@ -1,6 +1,7 @@
 from .async_client import (
     ContextOperations,
     EventOperations,
+    FeatureOperations,
     MemoryOperations,
     PersonalizationEngine,
     ProfileOperations,
@@ -8,7 +9,11 @@ from .async_client import (
     SystemClock,
     from_components,
 )
-from .client import PersonalizationClient, SyncPersonalizationClient
+from .client import (
+    PersonalizationClient,
+    SyncFeatureOperations,
+    SyncPersonalizationClient,
+)
 from .errors import (
     HTTPError,
     SDKError,
@@ -33,6 +38,7 @@ from .remote_client import AsyncPersonalizationClient, AsyncRemotePersonalizatio
 __all__ = [
     "ContextOperations",
     "EventOperations",
+    "FeatureOperations",
     "AsyncPersonalizationClient",
     "AsyncRemotePersonalizationClient",
     "MemoryOperations",
@@ -58,6 +64,7 @@ __all__ = [
     "SDKProcessingFailedError",
     "SyncClientInAsyncContextError",
     "SyncPersonalizationClient",
+    "SyncFeatureOperations",
     "SystemClock",
     "from_components",
 ]

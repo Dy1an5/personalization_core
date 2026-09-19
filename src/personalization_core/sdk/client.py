@@ -14,6 +14,7 @@ from personalization_core.application.dto import (
     EventIngestionInput,
     EventIngestionResult,
     EventPage,
+    FeatureProcessingResult,
     MemoryCreateInput,
     MemoryExtractionResult,
     MemoryPage,
@@ -24,13 +25,20 @@ from personalization_core.application.dto import (
 )
 from personalization_core.domain.context import ContextBundle, ContextRequest
 from personalization_core.domain.entities import Entity, EntityCreate
+from personalization_core.domain.features import FeatureState
 from personalization_core.domain.identifiers import SubjectRef
+from personalization_core.domain.jobs import ProcessingRun
 from personalization_core.domain.memory import MemoryRecord
 from personalization_core.domain.profile import ProfileDiff, ProfileSnapshot
 from personalization_core.domain.subjects import Subject
 from personalization_core.ports.memory_extractor import ConversationMessage
 from personalization_core.ports.purge_tokens import PurgeToken
-from personalization_core.ports.repositories import EventFilter, MemoryFilter, Page
+from personalization_core.ports.repositories import (
+    EventFilter,
+    FeatureStateFilter,
+    MemoryFilter,
+    Page,
+)
 
 from .async_client import PersonalizationEngine
 from .errors import SyncClientInAsyncContextError
@@ -102,6 +110,37 @@ class SyncEventOperations:
         page: Page | None = None,
     ) -> EventPage:
         return self.list_events(subject, filters, page)
+
+
+class SyncFeatureOperations:
+    def __init__(self, client: PersonalizationClient) -> None:
+        self._client = client
+
+    def process_event(
+        self, subject: SubjectRef, event_id: UUID
+    ) -> FeatureProcessingResult:
+        return self._client._run(
+            lambda: self._client.engine.features.process_event(subject, event_id)
+        )
+
+    def process_pending(self, subject: SubjectRef, limit: int = 50) -> ProcessingRun:
+        return self._client._run(
+            lambda: self._client.engine.features.process_pending(subject, limit)
+        )
+
+    def rebuild_dimension(self, subject: SubjectRef, dimension: str) -> ProcessingRun:
+        return self._client._run(
+            lambda: self._client.engine.features.rebuild_dimension(subject, dimension)
+        )
+
+    def list_states(
+        self,
+        subject: SubjectRef,
+        filters: FeatureStateFilter | None = None,
+    ) -> list[FeatureState]:
+        return self._client._run(
+            lambda: self._client.engine.features.list_states(subject, filters)
+        )
 
 
 class SyncMemoryOperations:
@@ -298,6 +337,7 @@ class PersonalizationClient:
 
         self.engine = engine
         self.events = SyncEventOperations(self)
+        self.features = SyncFeatureOperations(self)
         self.memories = SyncMemoryOperations(self)
         self.profiles = SyncProfileOperations(self)
         self.context = SyncContextOperations(self)

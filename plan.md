@@ -1287,21 +1287,21 @@ context = client.context.resolve(
 
 ### 阶段 18：验证领域抽象
 
-- [ ] 18.1 在独立仓库创建 `personalization-bilibili` Adapter。
-- [ ] 18.2 仅通过公共 API/插件协议接入，不导入 Core 内部模块。
-- [ ] 18.3 映射 Bilibili Entity、Event 和 Evidence。
-- [ ] 18.4 注册 creator、duration、topic、popularity Feature 插件。
-- [ ] 18.5 用当前匿名化样本验证画像迁移。
-- [ ] 18.6 再创建一个最小非 Bilibili Adapter，例如文章阅读。
-- [ ] 18.7 检查第二个 Adapter 是否要求修改 Core 表结构。
-- [ ] 18.8 若只需新增插件则通过抽象验收。
-- [ ] 18.9 若必须新增领域字段，先尝试移动到 Entity/Event JSON 属性。
-- [ ] 18.10 只有两个以上领域都需要时，才提升为 Core 公共字段。
+- [x] 18.1 在独立仓库创建 `personalization-bilibili` Adapter。
+- [x] 18.2 仅通过公共 API/插件协议接入，不导入 Core 内部模块。
+- [x] 18.3 映射 Bilibili Entity、Event 和 Evidence。
+- [x] 18.4 注册 creator、duration、topic、popularity Feature 插件。
+- [x] 18.5 用当前匿名化样本验证画像迁移。
+- [x] 18.6 再创建一个最小非 Bilibili Adapter，例如文章阅读。
+- [x] 18.7 检查第二个 Adapter 是否要求修改 Core 表结构。
+- [x] 18.8 若只需新增插件则通过抽象验收。
+- [x] 18.9 若必须新增领域字段，先尝试移动到 Entity/Event JSON 属性。
+- [x] 18.10 只有两个以上领域都需要时，才提升为 Core 公共字段。
 
 阶段验收：
 
-- [ ] Bilibili 和第二领域同时运行且互不污染。
-- [ ] Core 不包含任何平台专有字段或平台 API 依赖。
+- [x] Bilibili 和第二领域同时运行且互不污染。
+- [x] Core 不包含任何平台专有字段或平台 API 依赖。
 
 ### 阶段 19：发布 0.1.0
 

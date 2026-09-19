@@ -1,0 +1,15 @@
+{
+  "video": {
+    "video_id": "video-anon-001",
+    "title": "匿名 Python 入门",
+    "creator_id": "creator-anon-007",
+    "duration_seconds": 720,
+    "topics": ["python", "data"],
+    "popularity_score": 0.82
+  },
+  "event_id": "watch-anon-001",
+  "event_type": "viewed",
+  "occurred_at": "2026-09-19T04:00:00Z",
+  "watched_seconds": 600,
+  "polarity": "positive"
+}

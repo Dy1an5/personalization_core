@@ -29,6 +29,7 @@ command.md
 docs/*
 !/docs/phase16.md
 !/docs/phase17.md
+!/docs/phase18.md
 !/tests/
 tests/*
 !/tests/evaluation/
@@ -44,5 +45,11 @@ tests/integration/*
 !/tests/integration/postgres/
 tests/integration/postgres/*
 !/tests/integration/postgres/*.py
+
+# Phase 18 keeps both independently distributed adapter test suites visible.
+!adapters/personalization-bilibili/tests/
+!adapters/personalization-bilibili/tests/**
+!adapters/personalization-article/tests/
+!adapters/personalization-article/tests/**
 
 personalization.db
