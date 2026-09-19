@@ -1126,15 +1126,15 @@ class SemanticEnricher(Protocol):
 
 ### 阶段 12：实现 Embedded SDK
 
-- [ ] 12.1 实现 `PersonalizationEngine` 异步入口。
-- [ ] 12.2 暴露 Event、Memory、Profile、Context 服务。
-- [ ] 12.3 提供 `from_sqlite(path)` 工厂。
-- [ ] 12.4 提供依赖注入式 `from_components(...)` 工厂。
-- [ ] 12.5 实现资源关闭和 async context manager。
-- [ ] 12.6 提供同步 Client Wrapper。
-- [ ] 12.7 防止在运行中的 event loop 误用同步 Wrapper。
-- [ ] 12.8 编写 Embedded quickstart。
-- [ ] 12.9 编写完整本地 E2E 测试。
+- [x] 12.1 实现 `PersonalizationEngine` 异步入口。
+- [x] 12.2 暴露 Event、Memory、Profile、Context 服务。
+- [x] 12.3 提供 `from_sqlite(path)` 工厂。
+- [x] 12.4 提供依赖注入式 `from_components(...)` 工厂。
+- [x] 12.5 实现资源关闭和 async context manager。
+- [x] 12.6 提供同步 Client Wrapper。
+- [x] 12.7 防止在运行中的 event loop 误用同步 Wrapper。
+- [x] 12.8 编写 Embedded quickstart。
+- [x] 12.9 编写完整本地 E2E 测试。
 
 Embedded API 目标形态：
 
@@ -1148,8 +1148,8 @@ async with PersonalizationEngine.from_sqlite("personalization.db") as engine:
 
 阶段验收：
 
-- [ ] 不启动 HTTP Server 即可嵌入其他 Python 项目。
-- [ ] Quickstart 可以在临时目录从零运行成功。
+- [x] 不启动 HTTP Server 即可嵌入其他 Python 项目。
+- [x] Quickstart 可以在临时目录从零运行成功。
 
 ### 阶段 13：实现 HTTP API
 

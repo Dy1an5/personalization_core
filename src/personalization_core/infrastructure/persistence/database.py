@@ -27,12 +27,13 @@ def create_sqlite_engine(path: str | Path = ":memory:", **kwargs: Any) -> AsyncE
 
     @event.listens_for(sync_engine, "connect")
     def _configure_sqlite(dbapi_connection: Any, _connection_record: Any) -> None:
-        async def _set_pragmas(connection: Any) -> None:
-            await connection.execute("PRAGMA foreign_keys=ON")
-            if enable_wal:
-                await connection.execute("PRAGMA journal_mode=WAL")
-
-        dbapi_connection.run_async(_set_pragmas)
+        # SQLAlchemy invokes this listener in its adapted synchronous
+        # connection context.  Calling the DBAPI ``execute`` method directly
+        # lets the aiosqlite adapter await the driver operation correctly;
+        # nesting ``run_async`` here can deadlock connection acquisition.
+        dbapi_connection.execute("PRAGMA foreign_keys=ON")
+        if enable_wal:
+            dbapi_connection.execute("PRAGMA journal_mode=WAL")
 
     return engine
 

@@ -151,8 +151,13 @@ class SQLAlchemyUnitOfWorkFactory:
         return SQLAlchemyUnitOfWork(self.session_factory)
 
 
-def create_uow_factory(engine: AsyncEngine) -> SQLAlchemyUnitOfWorkFactory:
+def create_uow_factory(
+    engine: AsyncEngine,
+    *,
+    session_factory: async_sessionmaker[AsyncSession] | None = None,
+) -> SQLAlchemyUnitOfWorkFactory:
     """Build a UnitOfWork factory directly from an async engine."""
     return SQLAlchemyUnitOfWorkFactory(
-        async_sessionmaker(engine, expire_on_commit=False, autoflush=False)
+        session_factory
+        or async_sessionmaker(engine, expire_on_commit=False, autoflush=False)
     )
