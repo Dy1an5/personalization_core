@@ -74,6 +74,54 @@ Agent / Recommender / Application
 
 项目处于早期实施阶段，尚未发布。完整实施蓝图见 `plan.md`。
 
+## 远程 Python SDK
+
+远程 SDK 使用与 Embedded SDK 相同的公共 DTO。异步应用可以注入
+`httpx.AsyncClient` 或 transport 做测试；`base_url` 可以是 Server root，也可以
+已经包含 `/v1`。
+
+```python
+from personalization_core.sdk import AsyncPersonalizationClient
+
+async with AsyncPersonalizationClient(
+    base_url="http://localhost:8080",
+    api_key="...",
+    tenant_id="example-app",
+) as client:
+    await client.events.ingest_event("user-1", event)
+    context = await client.context.resolve(
+        subject_id="user-1",
+        query="推荐适合今晚看的内容",
+        use_case="recommendation",
+    )
+```
+
+没有运行中 event loop 的同步应用可以使用同一组 operation names。同步 wrapper 会
+在每次调用中管理短生命周期的 asyncio loop；在异步函数中请改用上面的 async client。
+
+```python
+from personalization_core.sdk import PersonalizationClient
+
+client = PersonalizationClient(
+    base_url="http://localhost:8080/v1",
+    api_key="...",
+    tenant_id="example-app",
+)
+try:
+    context = client.context.resolve(
+        subject_id="user-1",
+        query="推荐适合今晚看的内容",
+        use_case="recommendation",
+    )
+finally:
+    client.close()
+```
+
+每个远程请求都会带 Bearer token、tenant、namespace 和 request ID；单 event 会额外
+带与 `event.idempotency_key` 一致的 `Idempotency-Key`。GET/HEAD/OPTIONS 以及带
+幂等 key 的单 event 才会自动重试。最近一次服务器 request ID 可从
+`client.last_request_id` 读取，失败时也会保存在 SDK exception 上。
+
 ## 开发
 
 ```bash

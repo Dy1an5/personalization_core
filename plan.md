@@ -1186,15 +1186,15 @@ async with PersonalizationEngine.from_sqlite("personalization.db") as engine:
 
 ### 阶段 14：实现远程 Python SDK
 
-- [ ] 14.1 实现 Async HTTP Client。
-- [ ] 14.2 实现同步 Client。
-- [ ] 14.3 实现 timeout 配置。
-- [ ] 14.4 实现只对幂等请求自动重试。
-- [ ] 14.5 支持调用方传入 request ID 和 idempotency key。
-- [ ] 14.6 映射服务端稳定错误为 SDK Exception。
-- [ ] 14.7 为每个 HTTP Endpoint 添加 SDK 方法。
-- [ ] 14.8 用 OpenAPI 契约测试检查 SDK 请求与响应。
-- [ ] 14.9 添加 README 示例。
+- [x] 14.1 实现 Async HTTP Client。
+- [x] 14.2 实现同步 Client。
+- [x] 14.3 实现 timeout 配置。
+- [x] 14.4 实现只对幂等请求自动重试。
+- [x] 14.5 支持调用方传入 request ID 和 idempotency key。
+- [x] 14.6 映射服务端稳定错误为 SDK Exception。
+- [x] 14.7 为每个 HTTP Endpoint 添加 SDK 方法。
+- [x] 14.8 用 OpenAPI 契约测试检查 SDK 请求与响应。
+- [x] 14.9 添加 README 示例。
 
 目标调用方式：
 
@@ -1215,8 +1215,8 @@ context = client.context.resolve(
 
 阶段验收：
 
-- [ ] SDK 不泄露 HTTP 细节给普通调用方。
-- [ ] SDK 与 Embedded Engine 使用同一组公共 DTO。
+- [x] SDK 不泄露 HTTP 细节给普通调用方。
+- [x] SDK 与 Embedded Engine 使用同一组公共 DTO。
 
 ### 阶段 15：隐私、删除和审计
 

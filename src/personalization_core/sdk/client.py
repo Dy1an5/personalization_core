@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Any, TypeVar
 from uuid import UUID
 
+import httpx
+
 from personalization_core.application.dto import (
     BatchIngestionResult,
     BatchMode,
@@ -28,11 +30,28 @@ from personalization_core.ports.repositories import EventFilter, MemoryFilter, P
 
 from .async_client import PersonalizationEngine
 from .errors import SyncClientInAsyncContextError
+from .remote_client import AsyncPersonalizationClient
 
 # pyright: reportPrivateUsage=false
 
 _T = TypeVar("_T")
 _CoroutineFactory = Callable[[], Coroutine[Any, Any, _T]]
+
+
+class _SyncRemoteGroup:
+    """Small synchronous facade for one remote async operation group."""
+
+    def __init__(self, client: PersonalizationClient, group: Any) -> None:
+        self._client = client
+        self._group = group
+
+    def __getattr__(self, name: str) -> Any:
+        async_method = getattr(self._group, name)
+
+        def call(*args: Any, **kwargs: Any) -> Any:
+            return self._client._run(lambda: async_method(*args, **kwargs))
+
+        return call
 
 
 class SyncEventOperations:
@@ -205,7 +224,50 @@ class SyncContextOperations:
 class PersonalizationClient:
     """Synchronous SDK wrapper for applications without an active event loop."""
 
-    def __init__(self, engine: PersonalizationEngine) -> None:
+    def __init__(
+        self,
+        engine: PersonalizationEngine | None = None,
+        *,
+        base_url: str | None = None,
+        api_key: str | None = None,
+        tenant_id: str | None = None,
+        namespace: str = "default",
+        timeout: float | httpx.Timeout = 10.0,
+        max_retries: int = 2,
+        retry_backoff: float | Callable[[int], float] = 0.1,
+        http_client: httpx.AsyncClient | None = None,
+        transport: httpx.AsyncBaseTransport | None = None,
+    ) -> None:
+        if engine is not None and any(
+            value is not None for value in (base_url, api_key, tenant_id)
+        ):
+            raise ValueError("engine and remote connection settings are exclusive")
+        if engine is None:
+            if not base_url or api_key is None or tenant_id is None:
+                raise ValueError(
+                    "base_url, api_key, and tenant_id are required for remote mode"
+                )
+            remote = AsyncPersonalizationClient(
+                base_url=base_url,
+                api_key=api_key,
+                tenant_id=tenant_id,
+                namespace=namespace,
+                timeout=timeout,
+                max_retries=max_retries,
+                retry_backoff=retry_backoff,
+                http_client=http_client,
+                transport=transport,
+            )
+            self.engine: Any = remote
+            self.events = _SyncRemoteGroup(self, remote.events)
+            self.memories = _SyncRemoteGroup(self, remote.memories)
+            self.profiles = _SyncRemoteGroup(self, remote.profiles)
+            self.context = _SyncRemoteGroup(self, remote.context)
+            self.health = _SyncRemoteGroup(self, remote.health)
+            self.preferences = _SyncRemoteGroup(self, remote.preferences)
+            self.subjects = _SyncRemoteGroup(self, remote.subjects)
+            return
+
         self.engine = engine
         self.events = SyncEventOperations(self)
         self.memories = SyncMemoryOperations(self)
@@ -235,5 +297,8 @@ class PersonalizationClient:
             return asyncio.run(operation())
         raise SyncClientInAsyncContextError(
             "PersonalizationClient cannot be used inside a running event loop; "
-            "use PersonalizationEngine instead"
+            "use AsyncPersonalizationClient instead"
         )
+
+
+SyncPersonalizationClient = PersonalizationClient

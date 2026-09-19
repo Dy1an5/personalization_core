@@ -7,17 +7,55 @@ from .async_client import (
     SystemClock,
     from_components,
 )
-from .client import PersonalizationClient
-from .errors import SyncClientInAsyncContextError
+from .client import PersonalizationClient, SyncPersonalizationClient
+from .errors import (
+    HTTPError,
+    SDKError,
+    SDKIdempotencyConflictError,
+    SDKInvalidArgumentError,
+    SDKNotFoundError,
+    SDKProcessingFailedError,
+    SDKProviderError,
+    SDKRequestTooLargeError,
+    SDKRevisionConflictError,
+    SDKSubjectDeletedError,
+    SDKTenantScopeViolationError,
+    SDKTimeoutError,
+    SDKUnauthenticatedError,
+    ServerError,
+    SyncClientInAsyncContextError,
+    TimeoutError,
+    TransportError,
+)
+from .remote_client import AsyncPersonalizationClient, AsyncRemotePersonalizationClient
 
 __all__ = [
     "ContextOperations",
     "EventOperations",
+    "AsyncPersonalizationClient",
+    "AsyncRemotePersonalizationClient",
     "MemoryOperations",
     "PersonalizationClient",
     "PersonalizationEngine",
     "ProfileOperations",
+    "SDKError",
+    "HTTPError",
+    "ServerError",
+    "TransportError",
+    "SDKTimeoutError",
+    "TimeoutError",
+    "SDKInvalidArgumentError",
+    "SDKUnauthenticatedError",
+    "SDKTenantScopeViolationError",
+    "SDKNotFoundError",
+    "SDKSubjectDeletedError",
+    "SDKRevisionConflictError",
+    "SDKIdempotencyConflictError",
+    "SDKRequestTooLargeError",
+    "SDKProviderError",
+    "SDKProcessingFailedError",
     "SyncClientInAsyncContextError",
+    "SyncPersonalizationClient",
     "SystemClock",
     "from_components",
 ]
