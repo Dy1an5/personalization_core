@@ -1305,16 +1305,25 @@ context = client.context.resolve(
 
 ### 阶段 19：发布 0.1.0
 
-- [ ] 19.1 冻结公共 DTO 和 Plugin Protocol。
-- [ ] 19.2 检查 OpenAPI breaking changes。
-- [ ] 19.3 完成架构、数据模型、API、插件和隐私文档。
-- [ ] 19.4 完成 Embedded、Server、SDK 三条 quickstart。
-- [ ] 19.5 生成 migration compatibility 报告。
-- [ ] 19.6 运行完整测试矩阵。
-- [ ] 19.7 构建 wheel 和 source distribution。
-- [ ] 19.8 在干净环境安装产物并运行 quickstart。
-- [ ] 19.9 创建 changelog。
-- [ ] 19.10 标记 `v0.1.0`。
+- [x] 19.1 冻结公共 DTO 和 Plugin Protocol。
+- [x] 19.2 检查 OpenAPI breaking changes。
+- [x] 19.3 完成架构、数据模型、API、插件和隐私文档。
+- [x] 19.4 完成 Embedded、Server、SDK 三条 quickstart。
+- [x] 19.5 生成 migration compatibility 报告。
+- [x] 19.6 运行完整测试矩阵。
+- [x] 19.7 构建 wheel 和 source distribution。
+- [x] 19.8 在干净环境安装产物并运行 quickstart。
+- [x] 19.9 创建 changelog。
+- [x] 19.10 标记 `v0.1.0`。
+
+阶段验收：
+
+- [x] 公共 API 版本、导出快照和插件协议契约测试通过。
+- [x] OpenAPI `0.1.0` 基线未发现已有 operation 删除或方法变化。
+- [x] 文档、quickstart 和迁移兼容性报告已生成。
+- [x] 单元、契约、集成和 E2E 矩阵通过；PostgreSQL/external 标记按环境跳过。
+- [x] wheel/source distribution 构建成功，干净临时环境安装 wheel 并运行 release smoke。
+- [x] `CHANGELOG.md` 已创建，`v0.1.0` tag 指向发布提交。
 
 ## 12. Core MVP 完成定义
 

@@ -1,0 +1,30 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Personalization Core API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/v1/health/live": {"get": {}},
+    "/v1/health/ready": {"get": {}},
+    "/v1/subjects/{subject_id}/context:resolve": {"post": {}},
+    "/v1/subjects/{subject_id}/entities": {"post": {}},
+    "/v1/subjects/{subject_id}/events": {"get": {}, "post": {}},
+    "/v1/subjects/{subject_id}/events:batch": {"post": {}},
+    "/v1/subjects/{subject_id}/memories": {"get": {}, "post": {}},
+    "/v1/subjects/{subject_id}/memories:extract": {"post": {}},
+    "/v1/subjects/{subject_id}/memories:search": {"post": {}},
+    "/v1/subjects/{subject_id}/memories/{memory_id}": {"delete": {}, "get": {}, "patch": {}},
+    "/v1/subjects/{subject_id}/memories/{memory_id}:confirm": {"post": {}},
+    "/v1/subjects/{subject_id}/memories/{memory_id}:restore": {"post": {}},
+    "/v1/subjects/{subject_id}/preferences/{dimension}/{value_key}:explain": {"get": {}},
+    "/v1/subjects/{subject_id}/profiles:compare": {"get": {}},
+    "/v1/subjects/{subject_id}/profiles:refresh": {"post": {}},
+    "/v1/subjects/{subject_id}/profiles/{version}": {"get": {}},
+    "/v1/subjects/{subject_id}/profiles/latest": {"get": {}},
+    "/v1/subjects/{subject_id}": {"delete": {}},
+    "/v1/subjects/{subject_id}:export": {"get": {}},
+    "/v1/subjects/{subject_id}:purge": {"post": {}},
+    "/v1/subjects/{subject_id}:purge-token": {"post": {}}
+  }
+}
