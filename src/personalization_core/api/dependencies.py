@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Annotated
 
 from fastapi import Depends, Request
@@ -15,6 +15,7 @@ from personalization_core.domain.identifiers import (
     SubjectId,
     SubjectRef,
 )
+from personalization_core.infrastructure.observability.metrics import MetricsRegistry
 from personalization_core.sdk.async_client import PersonalizationEngine
 
 from .auth import AuthenticationContext, Authenticator, authenticate_token
@@ -24,6 +25,7 @@ from .auth import AuthenticationContext, Authenticator, authenticate_token
 class ApiRuntime:
     engine: PersonalizationEngine
     authenticator: Authenticator
+    metrics: MetricsRegistry = field(default_factory=MetricsRegistry)
 
 
 def get_runtime(request: Request) -> ApiRuntime:

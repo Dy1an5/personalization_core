@@ -36,6 +36,7 @@ from personalization_core.ports.audit_sink import AuditEvent, AuditSink
 from personalization_core.ports.clock import Clock
 from personalization_core.ports.embedder import Embedder
 from personalization_core.ports.full_text_search import FullTextIndex, TextDocument
+from personalization_core.ports.metrics import MetricsSink
 from personalization_core.ports.repositories import (
     FeatureStateFilter,
     MemoryFilter,
@@ -73,6 +74,7 @@ class ContextService:
         embedder: Embedder | None = None,
         reranker: Reranker | None = None,
         audit_sink: AuditSink | None = None,
+        metrics: MetricsSink | None = None,
     ) -> None:
         self._uow_factory = uow_factory
         self._clock = clock
@@ -82,6 +84,7 @@ class ContextService:
         self._embedder = embedder
         self._reranker = reranker
         self._audit_sink = audit_sink
+        self._metrics = metrics
 
     async def resolve_context(self, request: ContextRequest) -> ContextBundle:
         as_of: UtcDatetime = TypeAdapter[datetime](UtcDatetime).validate_python(
@@ -398,30 +401,35 @@ class ContextService:
 
     async def _embed_query(self, query: str) -> list[float]:
         assert self._embedder is not None
+        status = "error"
         try:
-            vector = await self._embedder.embed_query(query)
-        except TimeoutError as exc:
-            raise ProviderTimeoutError("Embedder timed out") from exc
-        except OSError as exc:
-            raise ProviderNetworkError("Embedder network failure") from exc
-        except (ProviderTimeoutError, ProviderNetworkError):
-            raise
-        except Exception as exc:
-            raise ProviderInvalidResponseError(
-                "Embedder returned an invalid response"
-            ) from exc
-        try:
-            values = list(vector)
-            if not values:
-                raise ValueError("empty vector")
-            result = [float(value) for value in values]
-            if not all(math.isfinite(value) for value in result):
-                raise ValueError("non-finite vector")
-        except (TypeError, ValueError, OverflowError) as exc:
-            raise ProviderInvalidResponseError(
-                "Embedder returned an invalid vector"
-            ) from exc
-        return result
+            try:
+                vector = await self._embedder.embed_query(query)
+            except TimeoutError as exc:
+                raise ProviderTimeoutError("Embedder timed out") from exc
+            except OSError as exc:
+                raise ProviderNetworkError("Embedder network failure") from exc
+            except (ProviderTimeoutError, ProviderNetworkError):
+                raise
+            except Exception as exc:
+                raise ProviderInvalidResponseError(
+                    "Embedder returned an invalid response"
+                ) from exc
+            try:
+                values = list(vector)
+                if not values:
+                    raise ValueError("empty vector")
+                result = [float(value) for value in values]
+                if not all(math.isfinite(value) for value in result):
+                    raise ValueError("non-finite vector")
+            except (TypeError, ValueError, OverflowError) as exc:
+                raise ProviderInvalidResponseError(
+                    "Embedder returned an invalid vector"
+                ) from exc
+            status = "success"
+            return result
+        finally:
+            self._record_provider_call(self._embedder, "embed_query", status)
 
     async def _apply_reranker(
         self,
@@ -430,26 +438,39 @@ class ContextService:
         memories: dict[UUID, MemoryRecord],
     ) -> None:
         assert self._reranker is not None
+        status = "error"
         try:
-            results = await self._reranker.rerank(
-                query,
-                [
-                    RerankCandidate(id=memory_id, text=memories[memory_id].content)
-                    for memory_id in candidates
-                ],
-                len(candidates),
+            try:
+                results = await self._reranker.rerank(
+                    query,
+                    [
+                        RerankCandidate(id=memory_id, text=memories[memory_id].content)
+                        for memory_id in candidates
+                    ],
+                    len(candidates),
+                )
+                seen: set[UUID] = set()
+                for result in results:
+                    if result.id in seen or result.id not in candidates:
+                        continue
+                    seen.add(result.id)
+                    candidates[result.id].score = result.score
+                    candidates[result.id].sources.add(ContextSource.RERANKED)
+                status = "success"
+            except Exception:
+                # A failed optional reranker must not remove already scope-checked
+                # candidates or turn a useful structured/full-text result into an error.
+                return
+        finally:
+            self._record_provider_call(self._reranker, "rerank", status)
+
+    def _record_provider_call(
+        self, provider: object, operation: str, status: str
+    ) -> None:
+        if self._metrics is not None:
+            self._metrics.provider_call(
+                getattr(provider, "name", type(provider).__name__), operation, status
             )
-        except Exception:
-            # A failed optional reranker must not remove already scope-checked
-            # candidates or turn a useful structured/full-text result into an error.
-            return
-        seen: set[UUID] = set()
-        for result in results:
-            if result.id in seen or result.id not in candidates:
-                continue
-            seen.add(result.id)
-            candidates[result.id].score = result.score
-            candidates[result.id].sources.add(ContextSource.RERANKED)
 
     @staticmethod
     def _relevant_conflicts(

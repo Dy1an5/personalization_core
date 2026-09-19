@@ -20,6 +20,12 @@ dependencies = [
 personalization-core = "personalization_core:main"
 personalization-core-eval = "personalization_core.evaluation.cli:main"
 
+[project.optional-dependencies]
+postgres = [
+    "asyncpg>=0.30.0",
+    "psycopg[binary]>=3.2.0",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -59,6 +65,7 @@ venvPath = "."
 venv = ".venv"
 
 [tool.pytest.ini_options]
+pythonpath = ["."]
 markers = [
     "unit: fast isolated tests for a single unit of behavior",
     "contract: tests that verify public interfaces and data contracts",

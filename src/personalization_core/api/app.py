@@ -1,11 +1,19 @@
 from __future__ import annotations
 
+import asyncio
 from contextlib import asynccontextmanager
+from time import monotonic
+from typing import Any
 from uuid import uuid4
 
 from fastapi import FastAPI
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
+from personalization_core.infrastructure.observability.metrics import (
+    MetricsRegistry,
+    elapsed_milliseconds,
+    safe_metric_path,
+)
 from personalization_core.sdk.async_client import PersonalizationEngine
 
 from .auth import Authenticator
@@ -16,13 +24,16 @@ from .routers import context, events, health, memories, profiles, subjects
 
 
 class RequestContextMiddleware:
-    def __init__(self, app: ASGIApp) -> None:
+    def __init__(self, app: ASGIApp, metrics: MetricsRegistry | None = None) -> None:
         self.app = app
+        self.metrics = metrics
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
+        started = monotonic()
+        status_code = 500
         headers = {key.lower(): value for key, value in scope.get("headers", [])}
         raw_request_id = headers.get(b"x-request-id", b"").strip()
         request_id = (
@@ -59,6 +70,8 @@ class RequestContextMiddleware:
         async def send_with_request_id(message: Message) -> None:
             if message["type"] == "http.response.start":
                 message = dict(message)
+                nonlocal status_code
+                status_code = int(message.get("status", 500))
                 message["headers"] = [
                     *[
                         (key, value)
@@ -69,7 +82,24 @@ class RequestContextMiddleware:
                 ]
             await send(message)
 
-        await self.app(scope, receive, send_with_request_id)
+        try:
+            await self.app(scope, receive, send_with_request_id)
+        finally:
+            if self.metrics is not None:
+                path = safe_metric_path(str(scope.get("path", "unknown")))
+                labels: dict[str, Any] = {
+                    "method": scope.get("method", "unknown"),
+                    "path": path,
+                    "status": status_code,
+                }
+                self.metrics.increment("http_requests_total", labels=labels)
+                if status_code >= 400:
+                    self.metrics.increment("http_errors_total", labels=labels)
+                self.metrics.observe_latency(
+                    "http_request_latency_ms",
+                    elapsed_milliseconds(started),
+                    labels={"path": path},
+                )
 
 
 def create_app(
@@ -77,7 +107,11 @@ def create_app(
     engine: PersonalizationEngine,
     authenticator: Authenticator,
     initialize_engine: bool = True,
+    shutdown_timeout: float = 10.0,
+    metrics: MetricsRegistry | None = None,
 ) -> FastAPI:
+    active_metrics = metrics or MetricsRegistry()
+
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         if initialize_engine:
@@ -86,7 +120,7 @@ def create_app(
             yield
         finally:
             if initialize_engine:
-                await engine.close()
+                await asyncio.wait_for(engine.close(), timeout=shutdown_timeout)
 
     app = FastAPI(
         title="Personalization Core API",
@@ -94,8 +128,10 @@ def create_app(
         root_path="",
         lifespan=lifespan,
     )
-    app.state.api_runtime = ApiRuntime(engine=engine, authenticator=authenticator)
-    app.add_middleware(RequestContextMiddleware)
+    app.state.api_runtime = ApiRuntime(
+        engine=engine, authenticator=authenticator, metrics=active_metrics
+    )
+    app.add_middleware(RequestContextMiddleware, metrics=active_metrics)
     install_exception_handlers(app)
     app.include_router(health.router, prefix="/v1")
     app.include_router(events.router, prefix="/v1")

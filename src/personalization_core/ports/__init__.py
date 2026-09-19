@@ -11,6 +11,7 @@ from .embedder import Embedder
 from .full_text_search import FullTextIndex, TextDocument, TextSearchHit
 from .job_runner import Job, JobRunner
 from .memory_extractor import ConversationMessage, MemoryExtractor
+from .metrics import MetricsSink
 from .purge_tokens import (
     InMemoryPurgeTokenStore,
     MemoryPurgeTokenStore,
@@ -57,6 +58,7 @@ __all__ = [
     "Job",
     "JobRunner",
     "MemoryExtractor",
+    "MetricsSink",
     "MemoryFilter",
     "MemoryRepository",
     "Page",

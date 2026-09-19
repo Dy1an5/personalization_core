@@ -1267,18 +1267,18 @@ context = client.context.resolve(
 
 ### 阶段 17：PostgreSQL 与生产运行
 
-- [ ] 17.1 添加 PostgreSQL Driver extra。
-- [ ] 17.2 让 PostgreSQL 通过 Repository 共享契约。
-- [ ] 17.3 验证 JSONB 和 UUID 映射。
-- [ ] 17.4 验证部分唯一索引。
-- [ ] 17.5 添加连接池配置。
-- [ ] 17.6 添加事务隔离和并发写测试。
-- [ ] 17.7 添加迁移锁策略。
-- [ ] 17.8 添加 readiness 数据库探针。
-- [ ] 17.9 提供 Dockerfile。
-- [ ] 17.10 提供 Docker Compose 示例。
-- [ ] 17.11 添加优雅关闭。
-- [ ] 17.12 添加基础指标：延迟、错误、处理积压、Provider 调用。
+- [x] 17.1 添加 PostgreSQL Driver extra。
+- [x] 17.2 让 PostgreSQL 通过 Repository 共享契约。
+- [x] 17.3 验证 JSONB 和 UUID 映射。
+- [x] 17.4 验证部分唯一索引。
+- [x] 17.5 添加连接池配置。
+- [x] 17.6 添加事务隔离和并发写测试。
+- [x] 17.7 添加迁移锁策略。
+- [x] 17.8 添加 readiness 数据库探针。
+- [x] 17.9 提供 Dockerfile。
+- [x] 17.10 提供 Docker Compose 示例。
+- [x] 17.11 添加优雅关闭。
+- [x] 17.12 添加基础指标：延迟、错误、处理积压、Provider 调用。
 
 阶段验收：
 

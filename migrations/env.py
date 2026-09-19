@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from logging.config import fileConfig
 
 from alembic import context
@@ -8,6 +9,14 @@ from sqlalchemy import engine_from_config, pool
 from personalization_core.infrastructure.persistence.sqlalchemy_models import Base
 
 config = context.config
+database_url = os.getenv("ALEMBIC_DATABASE_URL") or os.getenv("DATABASE_URL")
+if database_url:
+    # Alembic runs synchronously; use psycopg for migrations when the runtime
+    # URL is the asyncpg URL used by the application.
+    migration_url = database_url.replace(
+        "postgresql+asyncpg://", "postgresql+psycopg://"
+    )
+    config.set_main_option("sqlalchemy.url", migration_url.replace("%", "%%"))
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 target_metadata = Base.metadata
@@ -31,9 +40,21 @@ def run_migrations_online() -> None:
         poolclass=pool.NullPool,
     )
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
-        with context.begin_transaction():
-            context.run_migrations()
+        locked = connection.dialect.name == "postgresql"
+        if locked:
+            connection.exec_driver_sql(
+                "SELECT pg_advisory_lock(hashtext('personalization_core_migrations'))"
+            )
+        try:
+            context.configure(connection=connection, target_metadata=target_metadata)
+            with context.begin_transaction():
+                context.run_migrations()
+        finally:
+            if locked:
+                connection.exec_driver_sql(
+                    "SELECT pg_advisory_unlock(hashtext("
+                    "'personalization_core_migrations'))"
+                )
 
 
 if context.is_offline_mode():

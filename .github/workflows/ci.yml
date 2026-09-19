@@ -28,3 +28,36 @@ jobs:
 
       - name: Unit tests
         run: uv run pytest -m unit
+
+  postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: personalization
+          POSTGRES_USER: personalization
+          POSTGRES_PASSWORD: personalization
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U personalization -d personalization"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+      - name: Set up Python
+        run: uv python install 3.11
+      - name: Install dependencies
+        run: uv sync --extra postgres
+      - name: Upgrade database
+        env:
+          DATABASE_URL: postgresql+asyncpg://personalization:personalization@127.0.0.1:5432/personalization
+        run: uv run alembic upgrade head
+      - name: PostgreSQL integration and E2E tests
+        env:
+          POSTGRES_TEST_URL: postgresql+asyncpg://personalization:personalization@127.0.0.1:5432/personalization
+        run: uv run pytest tests/integration/postgres -q

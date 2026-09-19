@@ -4,7 +4,7 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TypeVar
+from typing import Any, TypeVar
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -35,7 +35,10 @@ from personalization_core.domain.memory import MemoryRecord
 from personalization_core.domain.profile import ProfileDiff, ProfileSnapshot
 from personalization_core.domain.subjects import Subject
 from personalization_core.infrastructure.indexes.full_text import SimpleFullTextIndex
+from personalization_core.infrastructure.observability.metrics import MetricsRegistry
 from personalization_core.infrastructure.persistence.database import (
+    DatabaseSettings,
+    create_async_engine_for_url,
     create_session_factory,
     create_sqlite_engine,
 )
@@ -384,6 +387,7 @@ class PersonalizationEngine:
         audit_sink: AuditSink | None = None,
         purge_token_store: PurgeTokenStore | None = None,
         retention_hook: RetentionHook | None = None,
+        metrics: MetricsRegistry | None = None,
     ) -> PersonalizationEngine:
         active_clock = clock or SystemClock()
         active_token_store = purge_token_store or InMemoryPurgeTokenStore()
@@ -430,6 +434,7 @@ class PersonalizationEngine:
             embedder=embedder,
             reranker=reranker,
             audit_sink=active_audit_sink,
+            metrics=metrics,
         )
         return cls(
             uow_factory=uow_factory,
@@ -466,6 +471,39 @@ class PersonalizationEngine:
         sdk._schema_initializer = initialize_schema
         return sdk
 
+    @classmethod
+    def from_database(
+        cls,
+        url: str,
+        *,
+        settings: DatabaseSettings | None = None,
+        **kwargs: Any,
+    ) -> PersonalizationEngine:
+        """Create a Server engine using the same application services as SQLite."""
+
+        db_engine = create_async_engine_for_url(url, settings=settings)
+        session_factory = create_session_factory(db_engine)
+        uow_factory = create_uow_factory(db_engine, session_factory=session_factory)
+        sdk = cls.from_components(
+            uow_factory=uow_factory,
+            engine=db_engine,
+            **kwargs,
+        )
+        sdk._owns_engine = True
+        return sdk
+
+    @classmethod
+    def from_postgres(
+        cls,
+        url: str,
+        *,
+        settings: DatabaseSettings | None = None,
+        **kwargs: Any,
+    ) -> PersonalizationEngine:
+        if not url.startswith("postgresql+asyncpg://"):
+            raise ValueError("PostgreSQL URL must use the postgresql+asyncpg driver")
+        return cls.from_database(url, settings=settings, **kwargs)
+
     @property
     def subject_service(self) -> SubjectService:
         return self._subject_service
@@ -497,6 +535,10 @@ class PersonalizationEngine:
     @property
     def is_closed(self) -> bool:
         return self._closed
+
+    @property
+    def database_engine(self) -> AsyncEngine | None:
+        return self._engine
 
     async def initialize(self) -> None:
         self._ensure_open()
@@ -543,6 +585,7 @@ def from_components(
     audit_sink: AuditSink | None = None,
     purge_token_store: PurgeTokenStore | None = None,
     retention_hook: RetentionHook | None = None,
+    metrics: MetricsRegistry | None = None,
 ) -> PersonalizationEngine:
     return PersonalizationEngine.from_components(
         uow_factory=uow_factory,
@@ -556,4 +599,5 @@ def from_components(
         audit_sink=audit_sink,
         purge_token_store=purge_token_store,
         retention_hook=retention_hook,
+        metrics=metrics,
     )

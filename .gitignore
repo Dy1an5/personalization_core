@@ -28,10 +28,21 @@ command.md
 !/docs/
 docs/*
 !/docs/phase16.md
+!/docs/phase17.md
 !/tests/
 tests/*
 !/tests/evaluation/
 tests/evaluation/*
 !/tests/evaluation/*.py
+!/tests/unit/
+tests/unit/*
+!/tests/unit/infrastructure/
+tests/unit/infrastructure/*
+!/tests/unit/infrastructure/*.py
+!/tests/integration/
+tests/integration/*
+!/tests/integration/postgres/
+tests/integration/postgres/*
+!/tests/integration/postgres/*.py
 
 personalization.db

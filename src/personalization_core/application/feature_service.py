@@ -22,6 +22,7 @@ from personalization_core.domain.identifiers import SubjectRef
 from personalization_core.domain.jobs import ProcessingRun, ProcessingStatus
 from personalization_core.plugins.registry import FeatureExtractorRegistry
 from personalization_core.ports.clock import Clock
+from personalization_core.ports.metrics import MetricsSink
 from personalization_core.ports.repositories import (
     EventFilter,
     FeatureStateFilter,
@@ -42,11 +43,13 @@ class FeatureService:
         clock: Clock,
         subject_service: SubjectService,
         registry: FeatureExtractorRegistry,
+        metrics: MetricsSink | None = None,
     ) -> None:
         self._uow_factory = uow_factory
         self._clock = clock
         self._subject_service = subject_service
         self._registry = registry
+        self._metrics = metrics
 
     async def process_event(
         self,
@@ -95,6 +98,8 @@ class FeatureService:
                 events = await uow.events.list(
                     subject, EventFilter(), Page(limit=limit)
                 )
+                if self._metrics is not None:
+                    self._metrics.set_processing_backlog(len(events))
                 await uow.commit()
         except Exception as error:
             await self._mark_failed(subject, run, error)
@@ -114,6 +119,10 @@ class FeatureService:
                 failed_count += 1
                 if first_error is None:
                     first_error = error
+            if self._metrics is not None:
+                self._metrics.set_processing_backlog(
+                    max(len(events) - processed_count - failed_count, 0)
+                )
 
         status = (
             ProcessingStatus.SUCCEEDED if failed_count == 0 else ProcessingStatus.FAILED
@@ -130,6 +139,8 @@ class FeatureService:
             }
         )
         await self._update_run(subject, completed)
+        if self._metrics is not None:
+            self._metrics.set_processing_backlog(0)
         return completed
 
     async def rebuild_dimension(
