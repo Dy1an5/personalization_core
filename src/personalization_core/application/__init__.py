@@ -1,3 +1,4 @@
+from .context_service import ContextService
 from .dto import (
     BatchIngestionResult,
     BatchItemResult,
@@ -18,6 +19,7 @@ __all__ = [
     "BatchIngestionResult",
     "BatchItemResult",
     "BatchMode",
+    "ContextService",
     "EventIngestionInput",
     "EventIngestionResult",
     "EventIngestionStatus",

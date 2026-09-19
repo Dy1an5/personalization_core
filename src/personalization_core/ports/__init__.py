@@ -1,6 +1,7 @@
 from .audit_sink import AuditEvent, AuditSink
 from .clock import Clock
 from .embedder import Embedder
+from .full_text_search import FullTextIndex, TextDocument, TextSearchHit
 from .job_runner import Job, JobRunner
 from .memory_extractor import ConversationMessage, MemoryExtractor
 from .repositories import (
@@ -28,6 +29,7 @@ __all__ = [
     "Clock",
     "ConversationMessage",
     "Embedder",
+    "FullTextIndex",
     "EntityRepository",
     "EventFilter",
     "EventRepository",
@@ -48,6 +50,8 @@ __all__ = [
     "SemanticAttribute",
     "SemanticEnricher",
     "SubjectRepository",
+    "TextDocument",
+    "TextSearchHit",
     "UnitOfWork",
     "UnitOfWorkFactory",
     "VectorDocument",

@@ -5,6 +5,7 @@
 """
 
 from .base import DomainModel, FrozenDomainModel
+from .context import ContextBundle, ContextRequest, ContextSource, MemorySearchHit
 from .enums import (
     MemoryAuthority,
     MemoryConflictType,
@@ -55,6 +56,9 @@ from .memory import (
 from .types import JsonValue, UtcDatetime
 
 __all__ = [
+    "ContextBundle",
+    "ContextRequest",
+    "ContextSource",
     "DomainError",
     "DomainModel",
     "EntityNotFoundError",
@@ -74,6 +78,7 @@ __all__ = [
     "MemoryProtectionError",
     "MemoryRecord",
     "MemoryScope",
+    "MemorySearchHit",
     "MemoryState",
     "MemoryTransition",
     "MemoryTransitionError",

@@ -238,6 +238,20 @@ class MemoryService:
                 ),
             )
 
+    async def search_memories(
+        self,
+        subject: SubjectRef,
+        filters: MemoryFilter | None = None,
+        page: Page | None = None,
+    ) -> MemoryPage:
+        """Compatibility entry point for structured Memory retrieval.
+
+        Full-text and vector retrieval intentionally remain in ContextService;
+        this method preserves the existing default-state and pagination semantics.
+        """
+
+        return await self.list_memories(subject, filters=filters, page=page)
+
     async def patch_memory(
         self, subject: SubjectRef, memory_id: UUID, patch: MemoryPatchInput
     ) -> MemoryRecord:
