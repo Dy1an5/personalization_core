@@ -21,12 +21,19 @@ async def delete_subject(request: Request, subject: SubjectDependency):
     return success_response(request, result)
 
 
+@router.post("/subjects/{subject_id}:purge-token")
+async def issue_purge_token(request: Request, subject: SubjectDependency):
+    runtime = get_runtime(request)
+    result = await runtime.engine.subjects.issue_purge_token(subject)
+    return success_response(request, result)
+
+
 @router.post("/subjects/{subject_id}:purge")
 async def purge_subject(
     request: Request, subject: SubjectDependency, body: PurgeRequest
 ):
     runtime = get_runtime(request)
     result = await runtime.engine.subject_service.purge_subject(
-        subject, body.confirmation
+        subject, body.token or body.confirmation or ""
     )
     return success_response(request, result)

@@ -175,6 +175,7 @@ class MemoryEvidenceBinding(StrictFrozenDomainModel):
 class SubjectExport(StrictFrozenDomainModel):
     subject: Subject
     exported_at: UtcDatetime
+    export_version: NonEmptyString = "subject-export-1"
     entities: list[ExportEntity] = Field(default_factory=list[ExportEntity])
     events: list[Event] = Field(default_factory=list[Event])
     evidence: list[Evidence] = Field(default_factory=list[Evidence])
@@ -194,3 +195,6 @@ class SubjectExport(StrictFrozenDomainModel):
 class PurgeResult(StrictFrozenDomainModel):
     subject: SubjectRef
     purged: bool = True
+    database_deleted: bool = True
+    full_text_deleted: bool = True
+    vector_deleted: bool = True

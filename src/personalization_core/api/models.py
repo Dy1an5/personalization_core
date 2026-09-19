@@ -3,7 +3,14 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Annotated, Any
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
 
 from personalization_core.application.dto import (
     BatchMode,
@@ -182,7 +189,16 @@ class ContextResolveRequest(ApiModel):
 
 
 class PurgeRequest(ApiModel):
-    confirmation: NonEmptyApiString
+    # ``confirmation`` remains accepted for clients of the phase 13 endpoint;
+    # it is now interpreted as a one-time token by the strict API runtime.
+    confirmation: NonEmptyApiString | None = None
+    token: NonEmptyApiString | None = None
+
+    @model_validator(mode="after")
+    def require_token(self) -> PurgeRequest:
+        if self.confirmation is None and self.token is None:
+            raise ValueError("confirmation or token is required")
+        return self
 
 
 class SuccessEnvelope(ApiModel):

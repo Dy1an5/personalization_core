@@ -4,6 +4,7 @@ from .async_client import (
     MemoryOperations,
     PersonalizationEngine,
     ProfileOperations,
+    SubjectOperations,
     SystemClock,
     from_components,
 )
@@ -38,6 +39,7 @@ __all__ = [
     "PersonalizationClient",
     "PersonalizationEngine",
     "ProfileOperations",
+    "SubjectOperations",
     "SDKError",
     "HTTPError",
     "ServerError",

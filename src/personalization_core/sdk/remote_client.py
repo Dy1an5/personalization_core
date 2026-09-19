@@ -31,6 +31,7 @@ from personalization_core.domain.memory import MemoryRecord
 from personalization_core.domain.profile import ProfileDiff, ProfileSnapshot
 from personalization_core.domain.subjects import Subject
 from personalization_core.ports.memory_extractor import ConversationMessage
+from personalization_core.ports.purge_tokens import PurgeToken
 from personalization_core.ports.repositories import EventFilter, MemoryFilter, Page
 
 from .errors import (
@@ -611,6 +612,21 @@ class ContextRemoteOperations(_OperationGroup):
 
 
 class SubjectRemoteOperations(_OperationGroup):
+    async def issue_purge_token(
+        self, subject_id: str, *, request_id: str | None = None
+    ) -> PurgeToken:
+        return await self._client._request(
+            "POST",
+            f"/subjects/{subject_id}:purge-token",
+            request_id=request_id,
+            response_type=PurgeToken,
+        )
+
+    async def issue_token(
+        self, subject_id: str, *, request_id: str | None = None
+    ) -> PurgeToken:
+        return await self.issue_purge_token(subject_id, request_id=request_id)
+
     async def export(
         self, subject_id: str, *, request_id: str | None = None
     ) -> SubjectExport:
@@ -634,14 +650,18 @@ class SubjectRemoteOperations(_OperationGroup):
     async def purge(
         self,
         subject_id: str,
-        confirmation: str,
+        token: str | None = None,
         *,
+        confirmation: str | None = None,
         request_id: str | None = None,
     ) -> PurgeResult:
+        active_token = token or confirmation
+        if not active_token:
+            raise ValueError("purge token is required")
         return await self._client._request(
             "POST",
             f"/subjects/{subject_id}:purge",
-            json_body={"confirmation": confirmation},
+            json_body={"token": active_token},
             request_id=request_id,
             response_type=PurgeResult,
         )

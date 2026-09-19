@@ -19,13 +19,17 @@ from personalization_core.application.dto import (
     MemoryPage,
     MemoryPatchInput,
     ProfileRefreshOptions,
+    PurgeResult,
+    SubjectExport,
 )
 from personalization_core.domain.context import ContextBundle, ContextRequest
 from personalization_core.domain.entities import Entity, EntityCreate
 from personalization_core.domain.identifiers import SubjectRef
 from personalization_core.domain.memory import MemoryRecord
 from personalization_core.domain.profile import ProfileDiff, ProfileSnapshot
+from personalization_core.domain.subjects import Subject
 from personalization_core.ports.memory_extractor import ConversationMessage
+from personalization_core.ports.purge_tokens import PurgeToken
 from personalization_core.ports.repositories import EventFilter, MemoryFilter, Page
 
 from .async_client import PersonalizationEngine
@@ -221,6 +225,30 @@ class SyncContextOperations:
         return self._client._run(lambda: self._client.engine.context.resolve(request))
 
 
+class SyncSubjectOperations:
+    def __init__(self, client: PersonalizationClient) -> None:
+        self._client = client
+
+    def export(self, subject: SubjectRef) -> SubjectExport:
+        return self._client._run(lambda: self._client.engine.subjects.export(subject))
+
+    def delete(self, subject: SubjectRef) -> Subject:
+        return self._client._run(lambda: self._client.engine.subjects.delete(subject))
+
+    def issue_purge_token(self, subject: SubjectRef) -> PurgeToken:
+        return self._client._run(
+            lambda: self._client.engine.subjects.issue_purge_token(subject)
+        )
+
+    def issue_token(self, subject: SubjectRef) -> PurgeToken:
+        return self.issue_purge_token(subject)
+
+    def purge(self, subject: SubjectRef, token: str) -> PurgeResult:
+        return self._client._run(
+            lambda: self._client.engine.subjects.purge(subject, token)
+        )
+
+
 class PersonalizationClient:
     """Synchronous SDK wrapper for applications without an active event loop."""
 
@@ -273,6 +301,7 @@ class PersonalizationClient:
         self.memories = SyncMemoryOperations(self)
         self.profiles = SyncProfileOperations(self)
         self.context = SyncContextOperations(self)
+        self.subjects = SyncSubjectOperations(self)
 
     @classmethod
     def from_sqlite(cls, path: str | Path = ":memory:") -> PersonalizationClient:

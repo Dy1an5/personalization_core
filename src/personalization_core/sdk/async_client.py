@@ -21,6 +21,8 @@ from personalization_core.application.dto import (
     MemoryPage,
     MemoryPatchInput,
     ProfileRefreshOptions,
+    PurgeResult,
+    SubjectExport,
 )
 from personalization_core.application.event_service import EventService
 from personalization_core.application.memory_service import MemoryService
@@ -31,6 +33,8 @@ from personalization_core.domain.entities import Entity, EntityCreate
 from personalization_core.domain.identifiers import SubjectRef
 from personalization_core.domain.memory import MemoryRecord
 from personalization_core.domain.profile import ProfileDiff, ProfileSnapshot
+from personalization_core.domain.subjects import Subject
+from personalization_core.infrastructure.indexes.full_text import SimpleFullTextIndex
 from personalization_core.infrastructure.persistence.database import (
     create_session_factory,
     create_sqlite_engine,
@@ -47,8 +51,14 @@ from personalization_core.ports.memory_extractor import (
     ConversationMessage,
     MemoryExtractor,
 )
+from personalization_core.ports.purge_tokens import (
+    InMemoryPurgeTokenStore,
+    PurgeToken,
+    PurgeTokenStore,
+)
 from personalization_core.ports.repositories import EventFilter, MemoryFilter, Page
 from personalization_core.ports.reranker import Reranker
+from personalization_core.ports.retention import RetentionHook
 from personalization_core.ports.unit_of_work import UnitOfWorkFactory
 from personalization_core.ports.vector_index import VectorIndex
 
@@ -303,6 +313,28 @@ class ContextOperations:
         return await self.resolve(request)
 
 
+class SubjectOperations:
+    def __init__(self, engine: PersonalizationEngine, service: SubjectService) -> None:
+        self._engine = engine
+        self._service = service
+
+    async def export(self, subject: SubjectRef) -> SubjectExport:
+        self._engine._ensure_open()
+        return await self._service.export_subject(subject)
+
+    async def delete(self, subject: SubjectRef) -> Subject:
+        self._engine._ensure_open()
+        return await self._service.soft_delete_subject(subject)
+
+    async def issue_purge_token(self, subject: SubjectRef) -> PurgeToken:
+        self._engine._ensure_open()
+        return await self._service.issue_purge_token(subject)
+
+    async def purge(self, subject: SubjectRef, token: str) -> PurgeResult:
+        self._engine._ensure_open()
+        return await self._service.purge_subject(subject, token)
+
+
 _T = TypeVar("_T")
 
 
@@ -335,6 +367,7 @@ class PersonalizationEngine:
         self.memories = MemoryOperations(self, memory_service)
         self.profiles = ProfileOperations(self, profile_service)
         self.context = ContextOperations(self, context_service)
+        self.subjects = SubjectOperations(self, subject_service)
 
     @classmethod
     def from_components(
@@ -349,26 +382,54 @@ class PersonalizationEngine:
         embedder: Embedder | None = None,
         reranker: Reranker | None = None,
         audit_sink: AuditSink | None = None,
+        purge_token_store: PurgeTokenStore | None = None,
+        retention_hook: RetentionHook | None = None,
     ) -> PersonalizationEngine:
         active_clock = clock or SystemClock()
-        subject_service = SubjectService(uow_factory, active_clock)
-        event_service = EventService(uow_factory, active_clock, subject_service)
+        active_token_store = purge_token_store or InMemoryPurgeTokenStore()
+        active_full_text_index = full_text_index or SimpleFullTextIndex()
+        active_audit_sink = audit_sink
+        session_factory = getattr(uow_factory, "session_factory", None)
+        if active_audit_sink is None and session_factory is not None:
+            from personalization_core.infrastructure.observability.audit import (
+                SQLAlchemyAuditSink,
+            )
+
+            active_audit_sink = SQLAlchemyAuditSink(session_factory)
+        subject_service = SubjectService(
+            uow_factory,
+            active_clock,
+            token_store=active_token_store,
+            full_text_index=active_full_text_index,
+            vector_index=vector_index,
+            audit_sink=active_audit_sink,
+            retention_hook=retention_hook,
+        )
+        event_service = EventService(
+            uow_factory,
+            active_clock,
+            subject_service,
+            audit_sink=active_audit_sink,
+            retention_hook=retention_hook,
+        )
         memory_service = MemoryService(
             uow_factory,
             active_clock,
             subject_service,
             extractor=memory_extractor,
+            audit_sink=active_audit_sink,
+            retention_hook=retention_hook,
         )
         profile_service = ProfileService(uow_factory, active_clock, subject_service)
         context_service = ContextService(
             uow_factory,
             active_clock,
             subject_service,
-            full_text_index=full_text_index,
+            full_text_index=active_full_text_index,
             vector_index=vector_index,
             embedder=embedder,
             reranker=reranker,
-            audit_sink=audit_sink,
+            audit_sink=active_audit_sink,
         )
         return cls(
             uow_factory=uow_factory,
@@ -480,6 +541,8 @@ def from_components(
     embedder: Embedder | None = None,
     reranker: Reranker | None = None,
     audit_sink: AuditSink | None = None,
+    purge_token_store: PurgeTokenStore | None = None,
+    retention_hook: RetentionHook | None = None,
 ) -> PersonalizationEngine:
     return PersonalizationEngine.from_components(
         uow_factory=uow_factory,
@@ -491,4 +554,6 @@ def from_components(
         embedder=embedder,
         reranker=reranker,
         audit_sink=audit_sink,
+        purge_token_store=purge_token_store,
+        retention_hook=retention_hook,
     )

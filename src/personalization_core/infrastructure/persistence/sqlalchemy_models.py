@@ -387,6 +387,20 @@ class AuditLogRow(Base):
     )
 
 
+class PurgeAuditLogRow(Base):
+    """Minimal audit record retained after the subject row is purged."""
+
+    __tablename__ = "purge_audit_log"
+
+    id: Mapped[UUID] = mapped_column(UUIDType(), primary_key=True)
+    scope_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(UTCDateTime(), nullable=False)
+    action: Mapped[str] = mapped_column(String(100), nullable=False)
+    metadata_json: Mapped[dict[str, Any]] = mapped_column(
+        "metadata", JSONType(), nullable=False, default=dict
+    )
+
+
 Index("ix_events_subject_occurred", EventRow.subject_pk, EventRow.occurred_at.desc())
 Index(
     "ix_events_subject_type_occurred",

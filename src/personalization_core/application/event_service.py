@@ -27,8 +27,10 @@ from personalization_core.domain.events import (
 from personalization_core.domain.evidence import Evidence, EvidenceCreate
 from personalization_core.domain.identifiers import EntityRef, SubjectRef
 from personalization_core.domain.types import JsonValue
+from personalization_core.ports.audit_sink import AuditEvent, AuditSink, subject_digest
 from personalization_core.ports.clock import Clock
 from personalization_core.ports.repositories import EventFilter, Page
+from personalization_core.ports.retention import RetentionHook
 from personalization_core.ports.unit_of_work import UnitOfWork, UnitOfWorkFactory
 
 from .dto import (
@@ -49,17 +51,36 @@ class EventService:
         uow_factory: UnitOfWorkFactory,
         clock: Clock,
         subject_service: SubjectService,
+        audit_sink: AuditSink | None = None,
+        retention_hook: RetentionHook | None = None,
     ) -> None:
         self._uow_factory = uow_factory
         self._clock = clock
         self._subject_service = subject_service
+        self._audit_sink = audit_sink
+        self._retention_hook = retention_hook
+
+    async def _emit(
+        self, subject: SubjectRef, action: str, **metadata: JsonValue
+    ) -> None:
+        if self._audit_sink is not None:
+            await self._audit_sink.emit(
+                AuditEvent(
+                    subject=subject,
+                    action=action,
+                    occurred_at=self._clock.now(),
+                    metadata={"scope_digest": subject_digest(subject), **metadata},
+                )
+            )
 
     async def upsert_entity(
         self,
         subject: SubjectRef,
         entity_input: EntityCreate,
     ) -> Entity:
+        created_subject = False
         async with self._uow_factory() as uow:
+            created_subject = await uow.subjects.get_by_ref(subject) is None
             await self._subject_service.ensure_in_uow(uow, subject)
             ref = EntityRef(
                 subject=subject,
@@ -77,7 +98,16 @@ class EventService:
                 entity = merge_entity(existing, entity_input, now)
                 await uow.entities.update(subject, entity)
             await uow.commit()
-            return entity
+        if created_subject:
+            await self._emit(subject, "create", resource="subject")
+        await self._emit(
+            subject,
+            "create" if existing is None else "update",
+            resource="entity",
+            entity_type=entity.entity_type,
+            external_id=entity.external_id,
+        )
+        return entity
 
     async def ingest_event(
         self,
@@ -85,13 +115,29 @@ class EventService:
         event_input: EventIngestionInput,
     ) -> EventIngestionResult:
         try:
+            created_subject = False
             async with self._uow_factory() as uow:
+                created_subject = await uow.subjects.get_by_ref(subject) is None
                 await self._subject_service.ensure_in_uow(uow, subject)
                 result = await self._ingest_one_in_uow(uow, subject, event_input)
                 await uow.commit()
-                return result
         except InvalidArgumentError as error:
             return await self._retry_idempotency_race(subject, event_input, error)
+        if created_subject:
+            await self._emit(subject, "create", resource="subject")
+        if result.status is EventIngestionStatus.CREATED:
+            await self._emit(
+                subject,
+                "create",
+                resource="event",
+                event_type=result.event.event_type,
+                source=result.event.source,
+            )
+            if self._retention_hook is not None:
+                await self._retention_hook.on_event_write(
+                    subject, result.event.occurred_at
+                )
+        return result
 
     async def _retry_idempotency_race(
         self,
@@ -240,13 +286,29 @@ class EventService:
             return self._make_batch_result(mode, items)
 
         async with self._uow_factory() as uow:
+            created_subject = await uow.subjects.get_by_ref(subject) is None
             await self._subject_service.ensure_in_uow(uow, subject)
             items = []
             for index, item in enumerate(events):
                 result = await self._ingest_one_in_uow(uow, subject, item)
                 items.append(self._item_from_result(index, result))
             await uow.commit()
-            return self._make_batch_result(mode, items)
+        if created_subject:
+            await self._emit(subject, "create", resource="subject")
+        for item in items:
+            if item.status is EventIngestionStatus.CREATED and item.event is not None:
+                await self._emit(
+                    subject,
+                    "create",
+                    resource="event",
+                    event_type=item.event.event_type,
+                    source=item.event.source,
+                )
+                if self._retention_hook is not None:
+                    await self._retention_hook.on_event_write(
+                        subject, item.event.occurred_at
+                    )
+        return self._make_batch_result(mode, items)
 
     @staticmethod
     def _item_from_result(index: int, result: EventIngestionResult) -> BatchItemResult:
@@ -306,10 +368,20 @@ class EventService:
                 Page(limit=1, offset=active_page.offset + active_page.limit),
             )
             has_more = bool(probe)
-            return EventPage(
+            result = EventPage(
                 items=items,
                 limit=active_page.limit,
                 offset=active_page.offset,
                 has_more=has_more,
                 next_offset=(active_page.offset + len(items)) if has_more else None,
             )
+            await uow.commit()
+        await self._emit(
+            subject,
+            "search",
+            resource="event",
+            result_count=len(result.items),
+            limit=result.limit,
+            offset=result.offset,
+        )
+        return result

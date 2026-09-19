@@ -41,6 +41,7 @@ from personalization_core.domain.memory import (
     restore_memory as restore_domain_memory,
 )
 from personalization_core.domain.types import JsonValue, UtcDatetime
+from personalization_core.ports.audit_sink import AuditEvent, AuditSink, subject_digest
 from personalization_core.ports.clock import Clock
 from personalization_core.ports.memory_extractor import (
     AllowAllMemoryContentFilter,
@@ -54,6 +55,7 @@ from personalization_core.ports.memory_extractor import (
     MemoryMergeStrategy,
 )
 from personalization_core.ports.repositories import MemoryFilter, Page
+from personalization_core.ports.retention import RetentionHook
 from personalization_core.ports.unit_of_work import UnitOfWork, UnitOfWorkFactory
 
 from .dto import (
@@ -97,6 +99,8 @@ class MemoryService:
         content_filter: MemoryContentFilter | None = None,
         merge_strategy: MemoryMergeStrategy | None = None,
         confirmation_policy: MemoryConfirmationPolicy | None = None,
+        audit_sink: AuditSink | None = None,
+        retention_hook: RetentionHook | None = None,
     ) -> None:
         self._uow_factory = uow_factory
         self._clock = clock
@@ -111,6 +115,25 @@ class MemoryService:
                 min_confidence=0.5,
             )
         )
+        self._audit_sink = audit_sink
+        self._retention_hook = retention_hook
+
+    async def _emit(
+        self, subject: SubjectRef, action: str, **metadata: JsonValue
+    ) -> None:
+        if self._audit_sink is not None:
+            await self._audit_sink.emit(
+                AuditEvent(
+                    subject=subject,
+                    action=action,
+                    occurred_at=self._clock.now(),
+                    metadata={"scope_digest": subject_digest(subject), **metadata},
+                )
+            )
+
+    async def _notify_memory_write(self, subject: SubjectRef) -> None:
+        if self._retention_hook is not None:
+            await self._retention_hook.on_memory_write(subject, self._clock.now())
 
     async def get_memory(self, subject: SubjectRef, memory_id: UUID) -> MemoryRecord:
         """Return one Memory after applying the normal subject-scope checks."""
@@ -121,7 +144,9 @@ class MemoryService:
     async def add_memory(
         self, subject: SubjectRef, input: MemoryCreateInput
     ) -> MemoryRecord:
+        created_subject = False
         async with self._uow_factory() as uow:
+            created_subject = await uow.subjects.get_by_ref(subject) is None
             await self._subject_service.ensure_in_uow(uow, subject)
             evidence = await self._get_or_create_evidence(
                 uow, subject, input.evidence, self._clock.now()
@@ -144,52 +169,66 @@ class MemoryService:
                     reason=input.reason,
                 )
                 await uow.commit()
-                return memory
-
-            now = self._clock.now()
-            memory = create_explicit_memory(
-                subject=subject,
-                key=input.key,
-                kind=input.kind,
-                content=input.content,
-                structured_value=input.structured_value,
-                target=input.target,
-                polarity=input.polarity,
-                scope=input.scope,
-                scope_value=input.scope_value,
-                confidence=input.confidence,
-                valid_from=input.valid_from,
-                valid_until=input.valid_until,
-                evidence_count=1 if evidence is not None else 0,
-                now=now,
-            )
-            if existing is not None:
-                transition_result = supersede_memory(
-                    existing,
-                    replacement=memory,
-                    expected_revision=existing.revision,
-                    actor=input.actor,
-                    reason=input.reason,
+                result = memory
+                action = "update"
+            else:
+                now = self._clock.now()
+                memory = create_explicit_memory(
+                    subject=subject,
+                    key=input.key,
+                    kind=input.kind,
+                    content=input.content,
+                    structured_value=input.structured_value,
+                    target=input.target,
+                    polarity=input.polarity,
+                    scope=input.scope,
+                    scope_value=input.scope_value,
+                    confidence=input.confidence,
+                    valid_from=input.valid_from,
+                    valid_until=input.valid_until,
+                    evidence_count=1 if evidence is not None else 0,
                     now=now,
                 )
-                await uow.memories.update(
-                    subject, transition_result.memory, existing.revision
-                )
+                if existing is not None:
+                    transition_result = supersede_memory(
+                        existing,
+                        replacement=memory,
+                        expected_revision=existing.revision,
+                        actor=input.actor,
+                        reason=input.reason,
+                        now=now,
+                    )
+                    await uow.memories.update(
+                        subject, transition_result.memory, existing.revision
+                    )
+                    await self._record_revision(
+                        uow,
+                        transition_result.memory,
+                        actor=input.actor,
+                        reason=input.reason,
+                        transition=transition_result.transition.transition,
+                    )
+                await uow.memories.add(subject, memory)
+                if evidence is not None:
+                    await uow.memories.bind_evidence(subject, memory.id, evidence.id)
                 await self._record_revision(
-                    uow,
-                    transition_result.memory,
-                    actor=input.actor,
-                    reason=input.reason,
-                    transition=transition_result.transition.transition,
+                    uow, memory, actor=input.actor, reason=input.reason
                 )
-            await uow.memories.add(subject, memory)
-            if evidence is not None:
-                await uow.memories.bind_evidence(subject, memory.id, evidence.id)
-            await self._record_revision(
-                uow, memory, actor=input.actor, reason=input.reason
-            )
-            await uow.commit()
-            return memory
+                await uow.commit()
+                result = memory
+                action = "create" if existing is None else "update"
+
+        if created_subject:
+            await self._emit(subject, "create", resource="subject")
+        await self._emit(
+            subject,
+            action,
+            resource="memory",
+            memory_id=str(result.id),
+            state=result.state.value,
+        )
+        await self._notify_memory_write(subject)
+        return result
 
     async def list_memories(
         self,
@@ -234,7 +273,7 @@ class MemoryService:
                         Page(1, requested_page.offset + requested_page.limit),
                     )
                 )
-            return MemoryPage(
+            result = MemoryPage(
                 items=items,
                 limit=requested_page.limit,
                 offset=requested_page.offset,
@@ -243,6 +282,16 @@ class MemoryService:
                     requested_page.offset + requested_page.limit if has_more else None
                 ),
             )
+            await uow.commit()
+        await self._emit(
+            subject,
+            "search",
+            resource="memory",
+            result_count=len(result.items),
+            limit=result.limit,
+            offset=result.offset,
+        )
+        return result
 
     async def search_memories(
         self,
@@ -285,7 +334,15 @@ class MemoryService:
                 uow, updated, actor=patch.actor, reason=patch.reason
             )
             await uow.commit()
-            return updated
+        await self._emit(
+            subject,
+            "update",
+            resource="memory",
+            memory_id=str(updated.id),
+            state=updated.state.value,
+        )
+        await self._notify_memory_write(subject)
+        return updated
 
     async def confirm_memory(
         self,
@@ -309,7 +366,15 @@ class MemoryService:
             )
             await self._save_transition(uow, subject, result, actor, reason)
             await uow.commit()
-            return result.memory
+        await self._emit(
+            subject,
+            "update",
+            resource="memory",
+            memory_id=str(result.memory.id),
+            state=result.memory.state.value,
+        )
+        await self._notify_memory_write(subject)
+        return result.memory
 
     async def delete_memory(
         self,
@@ -331,7 +396,15 @@ class MemoryService:
             )
             await self._save_transition(uow, subject, result, actor, reason)
             await uow.commit()
-            return result.memory
+        await self._emit(
+            subject,
+            "delete",
+            resource="memory",
+            memory_id=str(result.memory.id),
+            state=result.memory.state.value,
+        )
+        await self._notify_memory_write(subject)
+        return result.memory
 
     async def restore_memory(
         self,
@@ -368,7 +441,15 @@ class MemoryService:
             )
             await self._save_transition(uow, subject, result, actor, reason)
             await uow.commit()
-            return result.memory
+        await self._emit(
+            subject,
+            "update",
+            resource="memory",
+            memory_id=str(result.memory.id),
+            state=result.memory.state.value,
+        )
+        await self._notify_memory_write(subject)
+        return result.memory
 
     async def extract_memories(
         self, subject: SubjectRef, messages: Sequence[ConversationMessage]
@@ -487,11 +568,21 @@ class MemoryService:
                     )
                 )
             await uow.commit()
-            return MemoryExtractionResult(
+            extraction_result = MemoryExtractionResult(
                 extractor_name=extractor_name,
                 extractor_version=extractor_version,
                 items=items,
             )
+        for item in extraction_result.items:
+            await self._emit(
+                subject,
+                "create" if item.status is MemoryExtractionStatus.CREATED else "update",
+                resource="memory",
+                memory_id=str(item.memory.id),
+                extraction_status=item.status.value,
+            )
+            await self._notify_memory_write(subject)
+        return extraction_result
 
     async def _read_exact_matches(
         self,
